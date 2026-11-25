@@ -1,0 +1,1204 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><style>.player-identity{display:grid;grid-template-columns:72px repeat(4,minmax(0,1fr));gap:12px;align-items:center;margin-bottom:14px}.player-portrait{display:grid;justify-items:center;gap:4px}.player-portrait img,.player-portrait>span{width:60px;height:60px;object-fit:cover;border-radius:10px;background:var(--line);display:grid;place-items:center;font-size:28px}.player-columns{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.25fr);gap:12px;align-items:start}.player-panel{min-width:0;padding:12px}.player-attrs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.player-attr{border:1px solid var(--line);border-radius:8px;padding:8px;display:grid;gap:5px;text-align:center}.player-attr input{text-align:center}.player-resource{margin-bottom:14px}.player-meter{height:9px;background:var(--line);border-radius:8px;overflow:hidden;margin:8px 0}.player-meter>div{height:100%}.player-skill{display:grid;grid-template-columns:minmax(0,1fr) 28px 48px 30px;gap:4px;align-items:center;padding:5px 0;border-bottom:1px solid var(--line);font-size:12px}.player-skill input{padding:4px;width:100%;min-width:0}.player-skill button{padding:4px}.player-tabs{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}.player-panel .npc input{min-width:0;width:100%}.player-panel .npc .inline input{flex:1}.player-shell .gm-content{min-width:0}@media(max-width:1050px){.player-columns{grid-template-columns:1fr 1fr}.player-columns>div:last-child{grid-column:1/-1}.player-identity{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:650px){.player-columns{grid-template-columns:1fr}.player-identity{grid-template-columns:1fr}}</style></head><body>
+<title>Forja de Fichas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: tela inicial com modelos e fichas salvas; a ficha aberta usa colunas tipo mural, uma seção por cartão. */
+:root{
+  --bg:#edf1ee; --surface:#fbfcfb; --surface-2:#f0f4f1; --ink:#18231f; --muted:#59685f; --line:#cdd7d1;
+  --accent:#0e7466; --accent-ink:#ffffff; --accent-soft:#d6ede8; --danger:#b3261e; --danger-soft:#f9dedc; --warn:#8a5a00; --warn-soft:#fbeccd;
+  --font-display:'Bricolage Grotesque','Trebuchet MS',system-ui,sans-serif;
+  --font-body:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1512; --surface:#18211d; --surface-2:#1f2b26; --ink:#e5eee9; --muted:#93a59b; --line:#2f3f38;
+    --accent:#44c9b4; --accent-ink:#06201b; --accent-soft:#17342e; --danger:#ff8a80; --danger-soft:#3a1d1b; --warn:#f0c76a; --warn-soft:#3b2f12;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1512; --surface:#18211d; --surface-2:#1f2b26; --ink:#e5eee9; --muted:#93a59b; --line:#2f3f38;
+  --accent:#44c9b4; --accent-ink:#06201b; --accent-soft:#17342e; --danger:#ff8a80; --danger-soft:#3a1d1b; --warn:#f0c76a; --warn-soft:#3b2f12;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--ink); font:15px/1.5 var(--font-body);
+  padding-block:24px 64px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+#root{max-width:1240px;margin:0 auto}
+h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance;line-height:1.15}
+h1{font-size:clamp(2rem,6vw,3rem);font-weight:700;letter-spacing:-.02em}
+h2{font-size:1.25rem;font-weight:700}
+h3{font-size:1.1rem;font-weight:700}
+.lead{max-width:62ch;color:var(--muted);margin:.6rem 0 0}
+.lbl{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.hint{font-size:.8rem;color:var(--muted)}
+.sys{font-family:var(--font-mono);font-size:.72rem;color:var(--accent);font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+button{font:inherit;color:inherit;cursor:pointer}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:.45rem .8rem;font-weight:500}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.danger{background:var(--danger-soft);border-color:var(--danger);color:var(--danger)}
+.btn.small{padding:.25rem .55rem;font-size:.82rem}
+.btn:disabled{opacity:.4;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:.4rem .55rem;width:100%;min-width:0}
+input[type=checkbox]{width:1.1rem;height:1.1rem;padding:0;accent-color:var(--accent)}
+textarea{resize:vertical;min-height:5rem}
+
+/* Home */
+.hero{margin-bottom:28px}
+.tpl-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,235px),1fr));gap:14px;margin-top:14px}
+.tpl{display:flex;flex-direction:column;gap:.6rem;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px}
+.tpl.blank{border-style:dashed;background:transparent}
+.tpl ul{margin:0;padding-left:1.1rem;color:var(--muted);font-size:.88rem;display:grid;gap:.2rem;flex:1}
+.saved{margin-top:40px}
+.row{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;padding:.7rem 0;border-top:1px solid var(--line)}
+.row .grow{flex:1 1 200px;min-width:0}
+.row .grow b{font-weight:600}
+.empty{border:1px dashed var(--line);border-radius:10px;padding:20px;color:var(--muted);margin-top:12px}
+.warn{background:var(--danger-soft);border:1px solid var(--danger);color:var(--danger);border-radius:8px;padding:10px 14px;margin-bottom:16px}
+details.backup{margin-top:32px;border:1px solid var(--line);border-radius:10px;padding:12px 16px;background:var(--surface)}
+details.backup summary{cursor:pointer;font-weight:600}
+.backup-body{display:grid;gap:10px;margin-top:12px}
+.backup textarea{font-family:var(--font-mono);font-size:.78rem;min-height:4.5rem}
+.inline{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+/* Ficha */
+.topbar{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;margin-bottom:18px}
+.topbar .name{flex:1 1 220px;font-family:var(--font-display);font-size:1.3rem;font-weight:700}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:var(--surface);padding:.45rem .9rem;font-weight:500}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink)}
+.savestate{font-size:.78rem;color:var(--muted)}
+.sections{column-width:360px;column-gap:16px}
+.sec{break-inside:avoid;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px 6px;margin:0 0 16px;display:block}
+.sec.long{break-inside:auto}
+.sec-title{font:700 .8rem var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:0 0 .8rem}
+.sec-body{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;padding-bottom:10px}
+.s2{grid-column:span 2}.s3{grid-column:span 3}.s6{grid-column:span 6}
+.field{display:grid;gap:.25rem;align-content:start;min-width:0}
+.check{display:flex;gap:.5rem;align-items:center;padding-top:1.1rem}
+.attr{display:grid;gap:.2rem;justify-items:center;text-align:center;border:1px solid var(--line);border-radius:10px;padding:8px 6px;background:var(--surface-2);align-content:start}
+.attr input{text-align:center;font:700 1.5rem var(--font-mono);padding:.15rem;border-color:transparent;background:transparent}
+.attr input:focus-visible{border-color:var(--accent)}
+.mod{font:700 .95rem var(--font-mono);color:var(--accent);background:var(--accent-soft);border-radius:999px;padding:.05rem .65rem}
+.calc{font:700 1.3rem var(--font-mono);padding:.1rem 0}
+.calc.err{color:var(--danger);font-size:1rem}
+.bar-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.bar-head .num{font:700 .95rem var(--font-mono)}
+.barline{display:flex;gap:.35rem;align-items:center}
+.barline input{text-align:center;font-family:var(--font-mono)}
+.barline .btn{padding:.35rem .65rem}
+.track{height:8px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);overflow:hidden}
+.fill{height:100%;background:var(--accent)}
+.sk-head,.sk-row{display:grid;grid-template-columns:2.7rem minmax(0,1fr) 5.8rem 3.2rem;gap:6px;align-items:center}
+.sk-head.nolv,.sk-row.nolv{grid-template-columns:2.7rem minmax(0,1fr) 3.2rem}
+.sk-row{padding:3px 0;border-top:1px solid var(--line)}
+.sk-total{font:700 1rem var(--font-mono);text-align:center}
+.sk-name{display:grid;line-height:1.2;min-width:0}
+.sk-sub{font:500 .7rem var(--font-mono);color:var(--muted)}
+.sk-row select,.sk-row input{padding:.25rem .3rem;font-size:.82rem}
+.sk-row input{text-align:center}
+.tbl-head,.tbl-row{display:grid;gap:5px;align-items:center}
+.tbl-row input{padding:.3rem .4rem;font-size:.85rem}
+.tbl-row .btn{padding:.2rem 0}
+.tbl-head{margin-top:2px}
+
+/* Montar */
+.fedit{border:1px dashed var(--line);border-radius:8px;padding:10px;display:grid;gap:8px;margin-bottom:10px;background:var(--surface-2)}
+.fedit-head{display:flex;align-items:center;gap:6px}
+.spacer{flex:1}
+.tag{font:700 .7rem var(--font-mono);text-transform:uppercase;color:var(--accent)}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+.mono{font-family:var(--font-mono);font-size:.85rem}
+.addrow{display:flex;gap:8px;margin:2px 0 12px}
+.addrow select{flex:1}
+.sec-head{display:flex;gap:6px;align-items:center;margin-bottom:12px}
+.sec-head input{font-weight:600}
+.item-row{display:grid;grid-template-columns:minmax(0,1fr) 4rem auto;gap:6px;align-items:center}
+.help{margin:0 0 16px;border:1px solid var(--line);border-radius:10px;padding:10px 14px;background:var(--surface)}
+.help summary{cursor:pointer;font-weight:600}
+.help code{font-family:var(--font-mono);background:var(--surface-2);padding:0 .3rem;border-radius:4px}
+.help ul{margin:.5rem 0 0;padding-left:1.1rem;display:grid;gap:.25rem}
+@media (max-width:520px){.two{grid-template-columns:1fr}}
+
+/* Site: navegação, landing, campanhas, mestre, jogadores */
+a{color:var(--accent)}
+a.btn{display:inline-block;text-decoration:none;color:var(--ink)}
+a.btn.primary{color:var(--accent-ink)}
+.pill{font:600 .72rem var(--font-mono);padding:.1rem .55rem;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.pill.on{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+.pill.warn{background:var(--warn-soft);border-color:transparent;color:var(--warn)}
+.nav{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;padding-bottom:14px;border-bottom:1px solid var(--line);margin-bottom:28px}
+.brand{display:inline-flex;align-items:center;gap:8px;font:700 1.15rem var(--font-display);text-decoration:none;color:var(--ink)}
+.brand svg{color:var(--accent)}
+.nav-links{display:flex;flex-wrap:wrap;gap:2px;margin-left:auto}
+.nav-links a{padding:.35rem .7rem;border-radius:6px;text-decoration:none;color:var(--muted);font-weight:500}
+.nav-links a:hover{color:var(--ink)}
+.nav-links a[aria-current=page]{background:var(--accent-soft);color:var(--accent)}
+.page-head{margin-bottom:24px}
+.page-head h1{font-size:clamp(1.9rem,5vw,2.6rem)}
+.note{border:1px dashed var(--line);border-radius:8px;padding:8px 12px;font-size:.82rem;color:var(--muted);margin:0 0 18px}
+.band{margin-top:56px}
+.band>h2{margin-bottom:4px}
+.inline-links{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+
+.land{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr);gap:36px;align-items:center;padding:12px 0 4px}
+.land h1{font-size:clamp(2.4rem,7vw,4.2rem);letter-spacing:-.03em}
+.cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+.dice-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;display:grid;gap:14px;justify-items:center;text-align:center}
+.dice-face{position:relative;width:150px;height:150px;display:grid;place-items:center;color:var(--accent)}
+.dice-face svg{position:absolute;inset:0;width:100%;height:100%}
+.dice-face span{position:relative;font:700 2.6rem var(--font-mono);color:var(--ink)}
+.sides{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:16px;margin-top:16px}
+.side{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:.6rem}
+.side ul{margin:0;padding-left:1.1rem;display:grid;gap:.25rem;color:var(--muted);flex:1}
+.side .inline-links{margin-top:6px}
+.sys-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:14px;margin-top:16px}
+.sys-card{border-top:2px solid var(--accent);padding-top:10px;display:grid;gap:.3rem;align-content:start}
+.sys-card p{margin:0;color:var(--muted);font-size:.9rem}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:18px;margin-top:16px}
+.step{border-top:2px solid var(--line);padding-top:10px;display:grid;gap:.25rem}
+.step .n{font:700 .8rem var(--font-mono);color:var(--accent)}
+.step p{margin:0;color:var(--muted)}
+.closing{margin-top:56px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:28px;display:grid;gap:.4rem;justify-items:start}
+.foot-site{margin-top:64px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:.85rem}
+
+.roller{display:grid;gap:12px}
+.dice-row{display:flex;flex-wrap:wrap;gap:6px}
+.dice-row .btn{font-family:var(--font-mono);font-weight:700;min-width:3.4rem}
+.rollopts{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+.rollopts .field{width:5.5rem}
+.rollopts .field.wide{width:9rem}
+.result{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;min-height:3rem}
+.result b{font:700 2.4rem var(--font-mono);line-height:1}
+.log{display:grid;gap:2px;font:500 .8rem var(--font-mono);color:var(--muted)}
+
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:.3rem .8rem;font-size:.85rem}
+.chip[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.camp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:14px;margin-top:16px}
+.camp{display:flex;flex-direction:column;gap:.5rem;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px}
+.camp p{margin:0;color:var(--muted);font-size:.9rem}
+.camp .foot{margin-top:auto;padding-top:8px}
+.meta{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.8rem;color:var(--muted)}
+.detail{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:20px;margin-top:18px;align-items:start}
+.stack{display:grid;gap:16px;min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+.panel h2{font-size:1rem;margin-bottom:.6rem}
+.panel>.hint:first-of-type{margin-top:-.3rem}
+.cast>div{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;padding:.4rem 0;border-top:1px solid var(--line)}
+.tl{display:grid;gap:14px;border-left:2px solid var(--line);padding-left:16px;margin:0}
+.tl b{display:block}
+.tl span{color:var(--muted);font-size:.9rem}
+.panel-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,400px),1fr));gap:16px;align-items:start;margin-top:18px}
+
+.ini-add{display:grid;grid-template-columns:minmax(0,1fr) 4.5rem 4.5rem auto;gap:6px;margin-bottom:12px}
+.ini-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.ini-row{display:grid;grid-template-columns:2rem minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:.4rem .5rem;border-radius:8px;border:1px solid transparent}
+.ini-row.now{background:var(--accent-soft);border-color:var(--accent)}
+.ini-n{font:700 1rem var(--font-mono);text-align:center}
+.hpbox{display:flex;align-items:center;gap:4px;font:700 .95rem var(--font-mono)}
+.hpbox .btn{padding:.1rem .5rem}
+.todo{display:flex;gap:.6rem;align-items:flex-start;padding:.35rem 0}
+.todo input{margin-top:.2rem;flex:none}
+.todo.done span{text-decoration:line-through;color:var(--muted)}
+.npc{padding:.55rem 0;border-top:1px solid var(--line);display:grid;gap:.15rem}
+.npc p{margin:0;color:var(--muted);font-size:.88rem}
+.crow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:.6rem 0;border-top:1px solid var(--line)}
+.crow .grow{flex:1 1 200px;min-width:0}
+@media (max-width:820px){.land{grid-template-columns:1fr;gap:24px}.detail{grid-template-columns:1fr}}
+@media (max-width:480px){.ini-add{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.ini-add input:first-child{grid-column:1/-1}.ini-row{grid-template-columns:2rem minmax(0,1fr) auto}.ini-row .rm{grid-column:3}}
+
+.dice-card{grid-template-columns:minmax(0,1fr) minmax(100px,.65fr);align-items:center;text-align:left;gap:18px}.dice-main{display:grid;justify-items:center;gap:12px}.dice-history{border-left:1px solid var(--line);padding-left:14px;align-self:stretch;display:flex;flex-direction:column;gap:8px}.dice-history .log{gap:6px}.roll-entry{display:flex;justify-content:space-between;align-items:center;background:var(--surface-2);padding:7px 9px;border-radius:6px}.gm-shell{display:grid;grid-template-columns:180px minmax(0,1fr);gap:20px;border:1px solid var(--line);border-radius:14px;padding:16px;background:var(--surface)}.gm-side{display:flex;flex-direction:column;gap:5px}.gm-side button{text-align:left;border:0;background:transparent;padding:10px;border-radius:7px}.gm-side button[aria-current=page]{background:var(--accent-soft);color:var(--accent)}.gm-content{min-width:0;display:grid;gap:12px;align-content:start}.gm-banner{background:var(--accent-soft);border-radius:12px;padding:18px}.gm-banner h2{margin:8px 0}.gm-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.gm-stats b{display:block;font-size:1.5rem;margin-bottom:8px}.gm-progress{height:7px;background:var(--line);border-radius:10px;overflow:hidden;margin:10px 0}.gm-progress div{height:100%;background:var(--accent)}.gm-person{display:flex;gap:10px;align-items:center;padding:8px 0}.gm-avatar{background:var(--surface-2);border-radius:8px;padding:8px 12px}.gm-person .grow{flex:1}.gm-top{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:12px}.gm-content .panel{background:var(--bg)}@media(max-width:650px){.gm-shell{grid-template-columns:1fr;padding:10px}.gm-side{flex-direction:row;overflow-x:auto}.gm-side button{white-space:nowrap}.gm-top{grid-column:auto}.dice-card{gap:10px;padding:12px}.dice-face{width:110px;height:110px}}
+
+/* Rodapé ao fundo, sem sobrepor conteúdo */
+body{padding-bottom:20px}
+#root{min-height:calc(100dvh - 44px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));display:flex;flex-direction:column}
+.site-shell{flex:1;display:flex;flex-direction:column;min-width:0}
+.site-shell>.foot-site{margin-top:auto;padding-top:16px}
+.site-main{flex:1;padding-bottom:32px;min-width:0}
+.gm-list-head{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.gm-layout{display:flex;align-items:center;gap:8px;color:var(--muted)}
+.gm-layout .seg button{display:flex;align-items:center;gap:7px}
+.gm-layout svg{width:17px;height:17px}
+.gm-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:16px}
+.site-main:has(>.gm-list){display:flex;flex-direction:column;padding-bottom:16px}
+.gm-list{flex:1;display:flex;flex-direction:column;min-width:0}
+.gm-cards .camp{min-width:0;height:clamp(260px,40vh,340px);overflow:hidden;gap:12px;padding:20px}
+.gm-cards .camp h3,.gm-cards .camp .sys,.gm-cards .camp .hint{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;text-wrap:nowrap}
+.gm-cards .camp p{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:5;overflow:hidden;overflow-wrap:anywhere;flex:0 1 auto}
+.gm-cards .camp .btn{flex-shrink:0}
+.gm-cards .camp .hint{margin-top:auto}
+.gm-cards .camp .btn{margin-top:0;text-align:center}
+.gm-cards.compact .camp{padding:14px;gap:7px;height:132px;min-height:0}
+.gm-cards.compact .camp h3{font-size:1rem}
+.gm-cards.compact .camp .btn{padding:.3rem .6rem;font-size:.82rem}
+.gm-pagination{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:auto;padding-top:20px}
+.gm-pagination .inline{gap:6px}
+.gm-pagination button[aria-current=page]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+@media(max-width:760px){.gm-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:480px){.gm-cards{grid-template-columns:1fr}.gm-layout{flex-wrap:wrap}.gm-list-head{gap:0}}
+.campaign-form{width:100%;max-width:none;display:grid;gap:24px;margin:0;padding:26px}.campaign-form textarea{min-height:120px}.cf-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:32px}.cf-section{display:grid;align-content:start;gap:16px;min-width:0}.cf-section+ .cf-section{border-left:1px solid var(--line);padding-left:32px}.cf-heading{display:flex;align-items:center;gap:12px;margin-bottom:4px}.cf-heading>span{background:var(--accent-soft);color:var(--accent);border-radius:10px;padding:10px;font:700 1rem var(--font-mono)}.cf-heading h2{margin:0;font-size:1.15rem}.cf-heading p,.cf-schedule p{margin:4px 0 0}.cf-system{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:12px}.cf-small{display:grid;grid-template-columns:repeat(2,minmax(0,155px));gap:16px}.campaign-form input,.campaign-form select,.campaign-form textarea{background:var(--bg);padding:10px 12px}.cf-schedule{border:1px solid var(--line);background:var(--surface-2);border-radius:12px;padding:16px}.cf-schedule h3{font-size:1rem}.cf-dates{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:12px;margin-top:14px}.cf-dates input{min-height:48px;font-family:var(--font-mono);border-radius:9px}.cf-dates input::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.8}.cf-actions{border-top:1px solid var(--line);padding-top:20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.cf-actions .btn{padding:10px 20px}@media(max-width:850px){.cf-grid{grid-template-columns:1fr;gap:24px}.cf-section+ .cf-section{border-left:0;border-top:1px solid var(--line);padding:24px 0 0}}@media(max-width:480px){.campaign-form{padding:16px}.cf-system,.cf-dates{grid-template-columns:1fr}.cf-small{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* Rolador da landing: dimensões estáveis com histórico vazio ou cheio. */
+.dice-card{height:302px;min-height:302px;max-height:302px;width:100%;min-width:0;grid-template-rows:minmax(0,1fr);justify-items:stretch}
+.dice-main{min-width:0;align-self:center}
+.dice-history{min-height:0;min-width:0;overflow:hidden}
+.dice-history .log{min-height:0;overflow-y:auto;align-content:start;scrollbar-width:thin}
+.dice-history .roll-entry{min-height:31px;flex-shrink:0;padding:6px 9px}
+@media(max-width:650px){.dice-card{height:302px;min-height:302px;max-height:302px}}
+
+/* Animação do d20 sem alterar as dimensões do cartão. */
+.dice-face.rolling svg{animation:forja-tumble 850ms cubic-bezier(.22,.65,.35,1) both;filter:drop-shadow(0 0 8px var(--accent))}
+.dice-face.rolling span{animation:forja-flicker 170ms ease-in-out infinite alternate}
+.dice-face.landed{animation:forja-land 280ms ease-out both}
+@keyframes forja-tumble{0%{transform:translateY(0) rotate(0) scale(1)}25%{transform:translateY(-13px) rotate(125deg) scale(.88)}55%{transform:translateY(3px) rotate(270deg) scale(.96)}80%{transform:translateY(-5px) rotate(345deg) scale(.92)}100%{transform:translateY(0) rotate(360deg) scale(1)}}
+@keyframes forja-flicker{from{opacity:.45}to{opacity:1}}
+@keyframes forja-land{0%{transform:scale(.94);filter:drop-shadow(0 0 10px var(--accent))}55%{transform:scale(1.045)}100%{transform:scale(1);filter:none}}
+@media(prefers-reduced-motion:reduce){.dice-face.rolling svg,.dice-face.rolling span,.dice-face.landed{animation:none}}
+
+.campaign-role-row{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}.campaign-role-row h3,.campaign-role-row .sys{flex:1;min-width:0}.role-tag{flex-shrink:0;font-size:.72rem;font-weight:600;padding:2px 8px;border-radius:999px;border:1px solid var(--line);white-space:nowrap}.role-tag.master{color:var(--accent);background:var(--accent-soft)}.role-tag.player{color:var(--ink);background:var(--surface-2)}
+
+.campaign-filter-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+</style>
+
+<div id="root"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+
+<script id="logic">
+/* ---------- utilidades ---------- */
+const uid=()=>Math.random().toString(36).slice(2,9);
+const num=(v)=>{const n=parseFloat(String(v===undefined||v===null?'':v).replace(',','.'));return Number.isFinite(n)?n:0;};
+const fmt=(v)=>String(Math.round(v*100)/100);
+const fmtSigned=(n)=>(n>=0?'+':'−')+fmt(Math.abs(n));
+const slug=(s)=>String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'')||'campo';
+const cleanKey=(v)=>String(v).toLowerCase().replace(/[^a-z0-9_]/g,'');
+
+/* ---------- fórmulas ---------- */
+const FUNCS={
+  floor:Math.floor,ceil:Math.ceil,round:Math.round,abs:Math.abs,max:Math.max,min:Math.min,
+  ge:(a,b)=>a>=b?1:0,
+  pick:(i,...xs)=>(i>=1&&i<=xs.length)?xs[i-1]:0
+};
+const CC=new Map();
+function compile(src){
+  const s=String(src||'');let i=0;
+  const ws=()=>{while(i<s.length&&s[i]===' ')i++;};
+  const bin=(op,l,r)=>op==='+'?(g=>l(g)+r(g)):op==='-'?(g=>l(g)-r(g)):op==='*'?(g=>l(g)*r(g)):(g=>{const d=r(g);return d===0?0:l(g)/d;});
+  function expr(){let v=term();ws();while(s[i]==='+'||s[i]==='-'){const op=s[i++];v=bin(op,v,term());ws();}return v;}
+  function term(){let v=unary();ws();while(s[i]==='*'||s[i]==='/'){const op=s[i++];v=bin(op,v,unary());ws();}return v;}
+  function unary(){
+    ws();
+    if(s[i]==='-'){i++;const v=unary();return g=>-v(g);}
+    if(s[i]==='+'){i++;return unary();}
+    return atom();
+  }
+  function atom(){
+    ws();
+    if(s[i]==='('){i++;const v=expr();ws();if(s[i]!==')')throw new Error('Falta fechar )');i++;return v;}
+    let m=/^\d+(\.\d+)?/.exec(s.slice(i));
+    if(m){i+=m[0].length;const n=parseFloat(m[0]);return ()=>n;}
+    m=/^[a-z_][a-z0-9_]*/i.exec(s.slice(i));
+    if(m){
+      const name=m[0].toLowerCase();i+=m[0].length;ws();
+      if(s[i]==='('){
+        i++;const args=[];ws();
+        if(s[i]!==')'){for(;;){args.push(expr());ws();if(s[i]===','){i++;continue;}break;}}
+        if(s[i]!==')')throw new Error('Falta fechar )');
+        i++;
+        const fn=FUNCS[name];
+        if(!fn)throw new Error('Função desconhecida: '+name);
+        return g=>fn(...args.map(a=>a(g)));
+      }
+      return g=>g(name);
+    }
+    throw new Error('Fórmula inválida');
+  }
+  const out=expr();ws();
+  if(i<s.length)throw new Error('Sobrou texto na fórmula');
+  return out;
+}
+function evalFormula(src,get){
+  let fn=CC.get(src);
+  if(!fn){fn=compile(src);CC.set(src,fn);}
+  const v=fn(get);
+  return Number.isFinite(v)?v:0;
+}
+function tryCalc(src,get){try{return {ok:true,v:evalFormula(src,get)};}catch(e){return {ok:false,err:e.message};}}
+
+/* ---------- cálculo da ficha ---------- */
+const LEVELS={dnd:['—','Prof.','Esp.'],t20:['—','Treinado'],ordem:['—','Treinado','Veterano','Expert'],simples:null};
+const ORDEM_BONUS=[0,5,10,15];
+function barMax(f,data,get){return f.maxFormula?evalFormula(f.maxFormula,get):num((data[f.id]||{}).max);}
+function barCur(f,data,get){const d=data[f.id]||{};return (d.cur===undefined||d.cur==='')?barMax(f,data,get):num(d.cur);}
+function skillTotal(f,it,data,get){
+  const d=(data[f.id]||{})[it.id]||{};
+  const t=d.t||0,b=num(d.b);
+  if(f.rule==='dnd'){const p=f.profKey?get(f.profKey):0;return get(it.attr+'_mod')+(t===1?p:t===2?2*p:0)+b;}
+  if(f.rule==='t20'){const half=f.levelKey?Math.floor(get(f.levelKey)/2):0;return half+get(it.attr)+(t?(f.profKey?get(f.profKey):0):0)+b;}
+  if(f.rule==='ordem')return (ORDEM_BONUS[t]||0)+b;
+  return get(it.attr+'_mod')+b;
+}
+function evalEntry(e,data,get){
+  const f=e.f,raw=data[f.id];
+  if(e.kind==='skill')return skillTotal(f,e.it,data,get);
+  if(e.kind==='mod'){const sc=num(raw);return f.modRule==='dnd'?Math.floor((sc-10)/2):sc;}
+  if(e.kind==='max')return barMax(f,data,get);
+  switch(f.type){
+    case 'number':case 'attr':case 'select':return num(raw);
+    case 'check':return raw?1:0;
+    case 'bar':return barCur(f,data,get);
+    case 'calc':return evalFormula(f.formula,get);
+    default:return 0;
+  }
+}
+function makeCtx(sheet){
+  const idx={};
+  const put=(k,v)=>{if(k)idx[String(k).toLowerCase()]=v;};
+  for(const sec of sheet.sections)for(const f of sec.fields){
+    put(f.key,{f,kind:'main'});
+    if(f.key&&f.type==='attr')put(f.key+'_mod',{f,kind:'mod'});
+    if(f.key&&f.type==='bar')put(f.key+'_max',{f,kind:'max'});
+    if(f.type==='skills')for(const it of f.items)put(it.k,{f,it,kind:'skill'});
+  }
+  const memo={},busy={},data=sheet.data||{};
+  const get=(k)=>{
+    k=String(k).toLowerCase();
+    if(k in memo)return memo[k];
+    const e=idx[k];
+    if(!e||busy[k])return 0;
+    busy[k]=true;
+    let v=0;
+    try{v=evalEntry(e,data,get);}catch(err){v=0;}
+    busy[k]=false;memo[k]=v;
+    return v;
+  };
+  return {get,idx};
+}
+
+/* ---------- construtores de campos ---------- */
+const mkf=(type,label,key,x)=>Object.assign({id:uid(),type,label,key:key||''},x||{});
+const fText=(l,k,d)=>mkf('text',l,k,d===undefined?{}:{def:d});
+const fNum=(l,k,d)=>mkf('number',l,k,d===undefined?{}:{def:d});
+const fLong=(l)=>mkf('longtext',l,'');
+const fAttr=(l,k,rule,d)=>mkf('attr',l,k,{modRule:rule,def:d});
+const fBar=(l,k,x)=>mkf('bar',l,k,Object.assign({maxFormula:''},x||{}));
+const fSel=(l,k,opts,d)=>mkf('select',l,k,{options:opts,def:d});
+const fCalc=(l,k,f)=>mkf('calc',l,k,{formula:f});
+const fList=(l,cols)=>mkf('list',l,'',{cols});
+const skItems=(prefix,arr)=>arr.map(([name,attr])=>({id:uid(),name,attr,k:prefix+slug(name)}));
+const fSkills=(l,rule,items,x)=>mkf('skills',l,'',Object.assign({rule,items},x||{}));
+const mksec=(title,...fields)=>({id:uid(),title,fields});
+const blankRow=(f)=>({id:uid(),c:(f.cols||[]).map(()=>'')});
+function initData(sections){
+  const d={};
+  sections.forEach(s=>s.fields.forEach(f=>{
+    if(f.def!==undefined)d[f.id]=f.def;
+    if(f.type==='list')d[f.id]=[blankRow(f),blankRow(f)];
+  }));
+  return d;
+}
+
+/* ---------- tipos de campo (editor) ---------- */
+const TYPE_LABEL={text:'Texto curto',number:'Número',longtext:'Texto longo',check:'Marcação',attr:'Atributo',bar:'Barra atual/máx.',select:'Lista de opções',calc:'Cálculo',skills:'Perícias',list:'Tabela'};
+const TYPE_ORDER=['text','number','longtext','check','attr','bar','select','calc','skills','list'];
+function newField(type,secs){
+  const used=new Set();
+  secs.forEach(s=>s.fields.forEach(f=>{if(f.key)used.add(f.key);if(f.type==='skills')f.items.forEach(i=>used.add(i.k));}));
+  const base={text:'texto',number:'numero',longtext:'notas',check:'marcacao',attr:'atributo',bar:'barra',select:'opcao',calc:'calculo',skills:'pericias',list:'tabela'}[type];
+  let k=base,n=2;
+  while(used.has(k))k=base+(n++);
+  const key=(type==='longtext'||type==='list'||type==='skills')?'':k;
+  const f=mkf(type,'Novo campo',key);
+  if(type==='attr')f.modRule='none';
+  if(type==='bar')f.maxFormula='';
+  if(type==='select')f.options=['Opção 1','Opção 2'];
+  if(type==='calc')f.formula='0';
+  if(type==='skills'){f.rule='simples';f.profKey='';f.levelKey='';f.items=[{id:uid(),name:'Nova perícia',attr:'',k:'p_'+uid().slice(0,4)}];}
+  if(type==='list')f.cols=['Nome','Qtd'];
+  return f;
+}
+
+/* ---------- modelos ---------- */
+const DND_ATTR=[['Força','for'],['Destreza','des'],['Constituição','con'],['Inteligência','int'],['Sabedoria','sab'],['Carisma','car']];
+const DND_SKILLS=[['Acrobacia','des'],['Adestrar Animais','sab'],['Arcanismo','int'],['Atletismo','for'],['Atuação','car'],['Enganação','car'],['Furtividade','des'],['História','int'],['Intimidação','car'],['Intuição','sab'],['Investigação','int'],['Medicina','sab'],['Natureza','int'],['Percepção','sab'],['Persuasão','car'],['Prestidigitação','des'],['Religião','int'],['Sobrevivência','sab']];
+const ORDEM_ATTR=[['Agilidade','agi'],['Força','for'],['Intelecto','int'],['Presença','pre'],['Vigor','vig']];
+const ORDEM_SKILLS=[['Acrobacia','agi'],['Adestramento','pre'],['Artes','pre'],['Atletismo','for'],['Atualidades','int'],['Ciências','int'],['Crime','agi'],['Diplomacia','pre'],['Enganação','pre'],['Fortitude','vig'],['Furtividade','agi'],['Iniciativa','agi'],['Intimidação','pre'],['Intuição','pre'],['Investigação','int'],['Luta','for'],['Medicina','int'],['Ocultismo','int'],['Percepção','pre'],['Pilotagem','agi'],['Pontaria','agi'],['Profissão','int'],['Reflexos','agi'],['Religião','pre'],['Sobrevivência','int'],['Tática','int'],['Tecnologia','int'],['Vontade','pre']];
+const T20_ATTR=[['Força','for'],['Destreza','des'],['Constituição','con'],['Inteligência','int'],['Sabedoria','sab'],['Carisma','car']];
+const T20_SKILLS=[['Acrobacia','des'],['Adestramento','car'],['Atletismo','for'],['Atuação','car'],['Cavalgar','des'],['Conhecimento','int'],['Cura','sab'],['Diplomacia','car'],['Enganação','car'],['Fortitude','con'],['Furtividade','des'],['Guerra','int'],['Iniciativa','des'],['Intimidação','car'],['Intuição','sab'],['Investigação','int'],['Jogatina','car'],['Ladinagem','des'],['Luta','for'],['Misticismo','int'],['Nobreza','int'],['Ofício','int'],['Percepção','sab'],['Pilotagem','des'],['Pontaria','des'],['Reflexos','des'],['Religião','sab'],['Sobrevivência','sab'],['Vontade','sab']];
+
+function buildDnd(){
+  return [
+    mksec('Personagem',fText('Nome do personagem','nome'),fText('Classe','classe'),fText('Raça','raca'),fText('Antecedente','antecedente'),fText('Alinhamento','alinhamento'),fNum('Nível','nivel',1),fNum('Pontos de experiência','xp',0)),
+    mksec('Atributos',...DND_ATTR.map(([l,k])=>fAttr(l,k,'dnd',10))),
+    mksec('Combate',fCalc('Bônus de proficiência','prof','floor((nivel-1)/4)+2'),fCalc('Iniciativa','iniciativa','des_mod'),fNum('Classe de Armadura','ca',10),fText('Deslocamento','desloc','9 m'),fCalc('Percepção passiva','percepcao_passiva','10 + per_percepcao'),fText('Dados de vida','dv'),fBar('Pontos de vida','pv',{def:{max:10}})),
+    mksec('Salvaguardas',fSkills('Salvaguardas','dnd',DND_ATTR.map(([n,a])=>({id:uid(),name:n,attr:a,k:'salv_'+a})),{profKey:'prof'})),
+    mksec('Perícias',fSkills('Perícias','dnd',skItems('per_',DND_SKILLS),{profKey:'prof'})),
+    mksec('Ataques',fList('Ataques e truques',['Nome','Bônus','Dano / tipo'])),
+    mksec('Magias',fList('Magias preparadas',['Magia','Nível','Notas'])),
+    mksec('Equipamento',fList('Itens',['Item','Qtd','Peso']),fNum('Peças de ouro','po',0)),
+    mksec('Características e talentos',fLong('Características de classe, raça e talentos')),
+    mksec('Personalidade',fLong('Traços, ideais, laços e defeitos'),fLong('História')),
+    mksec('Anotações',fLong('Anotações da campanha'))
+  ];
+}
+function buildOrdem(){
+  return [
+    mksec('Personagem',fText('Nome','nome'),fText('Jogador','jogador'),fText('Origem','origem'),fSel('Classe','classe',['Combatente','Especialista','Ocultista'],1),fText('Trilha','trilha'),fNum('NEX (1 a 20: 1 = 5%, 20 = 99%)','nex',1),fCalc('NEX em %','nex_pct','min(nex*5, 99)')),
+    mksec('Atributos',...ORDEM_ATTR.map(([l,k])=>fAttr(l,k,'none',1))),
+    mksec('Condição',
+      fBar('Pontos de Vida','pv',{maxFormula:'pick(classe,20,16,12)+vig+(pick(classe,4,3,2)+vig)*(nex-1)'}),
+      fBar('Pontos de Esforço','pe',{maxFormula:'(pick(classe,2,3,4)+pre)*nex'}),
+      fBar('Sanidade','san',{maxFormula:'pick(classe,12,16,20)+pick(classe,3,4,5)*(nex-1)'}),
+      fCalc('Defesa','defesa','10 + agi'),fText('Deslocamento','desloc','9 m')),
+    mksec('Perícias',fSkills('Perícias','ordem',skItems('o_',ORDEM_SKILLS))),
+    mksec('Ataques',fList('Armas',['Arma','Teste','Dano','Crítico'])),
+    mksec('Rituais',fList('Rituais',['Ritual','Elemento','Círculo','Custo'])),
+    mksec('Inventário',fList('Itens',['Item','Categoria','Espaços'])),
+    mksec('Habilidades',fLong('Habilidades de classe, trilha e origem')),
+    mksec('Anotações',fLong('Investigação e anotações'))
+  ];
+}
+function buildT20(){
+  return [
+    mksec('Personagem',fText('Nome','nome'),fText('Raça','raca'),fText('Classe','classe'),fText('Origem','origem'),fText('Divindade','divindade'),fNum('Nível','nivel',1),fCalc('Bônus de treino','treino','2 + 2*ge(nivel,7) + 2*ge(nivel,15)')),
+    mksec('Atributos',...T20_ATTR.map(([l,k])=>fAttr(l,k,'none',0))),
+    mksec('Combate',fBar('Pontos de Vida','pv',{def:{max:10}}),fBar('Pontos de Mana','pm',{def:{max:1}}),fNum('Bônus de armadura e escudo','armadura',0),fCalc('Defesa','defesa','10 + floor(nivel/2) + des + armadura'),fText('Deslocamento','desloc','9 m')),
+    mksec('Perícias',fSkills('Perícias','t20',skItems('t_',T20_SKILLS),{levelKey:'nivel',profKey:'treino'})),
+    mksec('Ataques',fList('Armas',['Arma','Ataque','Dano','Crítico','Alcance'])),
+    mksec('Magias',fList('Magias',['Magia','Custo (PM)','Alcance / duração'])),
+    mksec('Poderes',fLong('Poderes de classe, raça e origem')),
+    mksec('Inventário',fList('Itens',['Item','Espaços']),fNum('Tibares (T$)','tibares',0)),
+    mksec('Anotações',fLong('Anotações'))
+  ];
+}
+function buildBlank(){
+  return [
+    mksec('Identidade',fText('Nome','nome'),fText('Função ou classe','funcao')),
+    mksec('Anotações',fLong('Anotações'))
+  ];
+}
+const TEMPLATES=[
+  {key:'dnd5e',system:'D&D 5e',title:'Aventureiro de 5ª edição',defaultName:'Novo personagem D&D',
+   blurb:'Ficha clássica com os seis atributos e os cálculos que ninguém quer fazer à mão.',
+   facts:['Modificadores calculados do valor do atributo',DND_SKILLS.length+' perícias e 6 salvaguardas','Bônus de proficiência pelo nível'],build:buildDnd},
+  {key:'ordem',system:'Ordem Paranormal',title:'Agente da Ordem',defaultName:'Novo agente',
+   blurb:'Ficha do sistema padrão, com recursos calculados pela classe e pelo NEX.',
+   facts:['PV, PE e Sanidade por classe e NEX',ORDEM_SKILLS.length+' perícias com treino de +5 a +15','Dados por atributo: 3d20, ou 2d20 pior se for 0'],build:buildOrdem},
+  {key:'ordem-sh',system:'Ordem: Sobrevivendo ao Horror',title:'Sobrevivendo ao Horror',defaultName:'Novo sobrevivente',
+   blurb:'Parte da mesma base da ficha padrão. Confira os valores no seu livro e ajuste no modo Montar.',
+   facts:['Mesma estrutura de PV, PE e Sanidade','Todos os campos editáveis','Fórmulas visíveis e ajustáveis'],build:buildOrdem},
+  {key:'t20',system:'Tormenta20',title:'Aventureiro de Arton',defaultName:'Novo aventureiro',
+   blurb:'Atributos já são os modificadores, e as perícias somam metade do nível e o treino.',
+   facts:['Defesa calculada pelo nível e pela Destreza',T20_SKILLS.length+' perícias com ½ nível + treino','Bônus de treino de +2, +4 ou +6'],build:buildT20},
+  {key:'blank',system:'Do zero',title:'Ficha em branco',defaultName:'Nova ficha',
+   blurb:'Comece vazio e monte as seções do seu sistema ou do seu jogo caseiro.',
+   facts:['Texto, números, barras e tabelas','Atributos com modificador opcional','Cálculos com fórmulas simples'],build:buildBlank}
+];
+</script>
+
+<script id="ui">
+const {useState,useEffect,useMemo,useRef}=React;
+const h=React.createElement;
+const E=(tag)=>(p,...c)=>h(tag,p,...c);
+const div=E('div'),span=E('span'),btn=E('button'),inp=E('input'),sel=E('select'),opt=E('option'),area=E('textarea'),lab=E('label'),
+  h1=E('h1'),h2=E('h2'),h3=E('h3'),para=E('p'),sect=E('section'),hdr=E('header'),det=E('details'),summ=E('summary'),ul=E('ul'),li=E('li'),code=E('code'),sm=E('small');
+
+const STORE_KEY='forja-fichas-v1';
+function loadStore(){
+  try{const raw=localStorage.getItem(STORE_KEY);if(raw){const o=JSON.parse(raw);if(o&&Array.isArray(o.sheets))return o;}}catch(e){}
+  return {sheets:[]};
+}
+const mapSec=(id,fn)=>(secs)=>secs.map(s=>s.id===id?fn(s):s);
+const moveArr=(arr,i,d)=>{const j=i+d;if(j<0||j>=arr.length)return arr;const a=arr.slice();const t=a[i];a[i]=a[j];a[j]=t;return a;};
+
+function Confirm({label,onYes}){
+  const [armed,setArmed]=useState(false);
+  useEffect(()=>{if(!armed)return undefined;const t=setTimeout(()=>setArmed(false),3000);return ()=>clearTimeout(t);},[armed]);
+  return btn({type:'button',className:'btn small'+(armed?' danger':''),onClick:()=>{if(armed){setArmed(false);onYes();}else setArmed(true);}},armed?'Confirmar?':label);
+}
+function Commit({value,onCommit,...rest}){
+  const [v,setV]=useState(value);
+  useEffect(()=>{setV(value);},[value]);
+  return inp({...rest,value:v,onChange:e=>setV(e.target.value),onBlur:()=>onCommit(v),onKeyDown:e=>{if(e.key==='Enter')e.target.blur();}});
+}
+
+/* ---------- ficha: modo preencher ---------- */
+function ListField({f,data,setVal}){
+  const rows=Array.isArray(data[f.id])?data[f.id]:[];
+  const cols=f.cols||[];
+  const tpl={gridTemplateColumns:cols.map((_,i)=>i===0?'minmax(0,2fr)':'minmax(0,1fr)').join(' ')+' 1.8rem'};
+  const setCell=(r,i,v)=>{const c=cols.map((_,j)=>(r.c||[])[j]||'');c[i]=v;setVal(f.id,rows.map(x=>x.id===r.id?{...x,c}:x));};
+  return div({className:'field'},
+    span({className:'lbl'},f.label),
+    div({className:'tbl-head',style:tpl},cols.map((c,i)=>span({key:i,className:'hint'},c)),span(null,'')),
+    rows.map(r=>div({key:r.id,className:'tbl-row',style:tpl},
+      cols.map((c,i)=>inp({key:i,type:'text','aria-label':c,value:(r.c||[])[i]||'',onChange:e=>setCell(r,i,e.target.value)})),
+      btn({type:'button',className:'btn small','aria-label':'Remover linha',onClick:()=>setVal(f.id,rows.filter(x=>x.id!==r.id))},'×'))),
+    div(null,btn({type:'button',className:'btn small',onClick:()=>setVal(f.id,[...rows,blankRow(f)])},'+ Linha')));
+}
+function SkillsField({f,ctx,data,setVal}){
+  const lv=LEVELS[f.rule]||null;
+  const st=data[f.id]||{};
+  const setSk=(id,p)=>setVal(f.id,{...st,[id]:{...(st[id]||{}),...p}});
+  const cls=lv?'':' nolv';
+  return div({className:'field'},
+    span({className:'lbl'},f.label),
+    div({className:'sk-head hint'+cls},span(null,'Total'),span(null,'Perícia'),lv?span(null,'Treino'):null,span(null,'Extra')),
+    f.items.map(it=>{
+      const d=st[it.id]||{};
+      const total=skillTotal(f,it,data,ctx.get);
+      let sub=(it.attr||'').toUpperCase();
+      if(f.rule==='ordem'){const n=ctx.get(it.attr);sub+=' · '+(n>0?n+'d20':'2d20 (pior)');}
+      return div({key:it.id,className:'sk-row'+cls},
+        div({className:'sk-total'},fmtSigned(total)),
+        div({className:'sk-name'},span(null,it.name),span({className:'sk-sub'},sub)),
+        lv?sel({'aria-label':'Treino em '+it.name,value:d.t||0,onChange:e=>setSk(it.id,{t:Number(e.target.value)})},lv.map((o,i)=>opt({key:i,value:i},o))):null,
+        inp({type:'number','aria-label':'Bônus extra em '+it.name,value:d.b===undefined?'':d.b,onChange:e=>setSk(it.id,{b:e.target.value})}));
+    }));
+}
+function BarField({f,ctx,data,setVal}){
+  const d=data[f.id]||{};
+  const max=barMax(f,data,ctx.get);
+  const cur=(d.cur===undefined||d.cur==='')?max:num(d.cur);
+  const setCur=(v)=>setVal(f.id,{...d,cur:v});
+  const pct=max>0?Math.max(0,Math.min(100,cur/max*100)):0;
+  return div({className:'field'},
+    div({className:'bar-head'},span({className:'lbl'},f.label),span({className:'num'},fmt(cur)+' / '+fmt(max))),
+    div({className:'track'},div({className:'fill',style:{width:pct+'%'}})),
+    div({className:'barline'},
+      btn({type:'button',className:'btn','aria-label':'Diminuir',onClick:()=>setCur(cur-1)},'−'),
+      inp({type:'number','aria-label':f.label+' atual',value:d.cur===undefined?'':d.cur,placeholder:fmt(max),onChange:e=>setCur(e.target.value)}),
+      span({className:'hint'},'de'),
+      f.maxFormula?span({className:'calc',style:{fontSize:'1rem',minWidth:'2.5rem',textAlign:'center'}},fmt(max)):inp({type:'number','aria-label':f.label+' máximo',value:d.max===undefined?'':d.max,onChange:e=>setVal(f.id,{...d,max:e.target.value})}),
+      btn({type:'button',className:'btn','aria-label':'Aumentar',onClick:()=>setCur(cur+1)},'+')));
+}
+function FillField({f,ctx,data,setVal}){
+  const v=data[f.id];
+  switch(f.type){
+    case 'text':return div({className:'field'},span({className:'lbl'},f.label),inp({type:'text',value:v===undefined?'':v,onChange:e=>setVal(f.id,e.target.value)}));
+    case 'number':return div({className:'field'},span({className:'lbl'},f.label),inp({type:'number',value:v===undefined?'':v,onChange:e=>setVal(f.id,e.target.value)}));
+    case 'longtext':return div({className:'field'},span({className:'lbl'},f.label),area({value:v===undefined?'':v,onChange:e=>setVal(f.id,e.target.value)}));
+    case 'check':return lab({className:'check'},inp({type:'checkbox',checked:!!v,onChange:e=>setVal(f.id,e.target.checked)}),f.label);
+    case 'select':return div({className:'field'},span({className:'lbl'},f.label),sel({value:v||0,onChange:e=>setVal(f.id,Number(e.target.value))},opt({value:0},'—'),(f.options||[]).map((o,i)=>opt({key:i,value:i+1},o))));
+    case 'attr':return div({className:'attr'},span({className:'lbl'},f.label),inp({type:'number','aria-label':f.label,value:v===undefined?'':v,onChange:e=>setVal(f.id,e.target.value)}),f.modRule==='dnd'?span({className:'mod'},fmtSigned(Math.floor((num(v)-10)/2))):null);
+    case 'calc':{const r=tryCalc(f.formula,ctx.get);return div({className:'field'},span({className:'lbl'},f.label),div({className:'calc'+(r.ok?'':' err'),title:r.ok?'':r.err},r.ok?fmt(r.v):'Fórmula com erro'));}
+    case 'bar':return h(BarField,{f,ctx,data,setVal});
+    case 'skills':return h(SkillsField,{f,ctx,data,setVal});
+    case 'list':return h(ListField,{f,data,setVal});
+    default:return null;
+  }
+}
+const spanOf=(f)=>f.type==='attr'?'s2':(f.type==='bar'||f.type==='longtext'||f.type==='skills'||f.type==='list')?'s6':'s3';
+function FillSection({sec,ctx,data,setVal}){
+  const long=sec.fields.some(f=>f.type==='skills');
+  return sect({className:'sec'+(long?' long':'')},
+    sec.title?h2({className:'sec-title'},sec.title):null,
+    sec.fields.length===0?para({className:'hint'},'Seção vazia. Use o modo Montar para adicionar campos.'):
+    div({className:'sec-body'},sec.fields.map(f=>div({key:f.id,className:spanOf(f)},h(FillField,{f,ctx,data,setVal})))));
+}
+
+/* ---------- ficha: modo montar ---------- */
+const RULE_LABEL={simples:'Simples (modificador + extra)',dnd:'D&D 5e (proficiência)',t20:'Tormenta20 (½ nível + treino)',ordem:'Ordem Paranormal (treino +5/+10/+15)'};
+function FieldEditor({f,i,n,secId,setLayout}){
+  const patch=(p)=>setLayout(mapSec(secId,s=>({...s,fields:s.fields.map(x=>x.id===f.id?{...x,...p}:x)})));
+  const move=(d)=>setLayout(mapSec(secId,s=>({...s,fields:moveArr(s.fields,i,d)})));
+  const del=()=>setLayout(mapSec(secId,s=>({...s,fields:s.fields.filter(x=>x.id!==f.id)})));
+  const hasKey=f.type!=='longtext'&&f.type!=='list'&&f.type!=='skills';
+  const items=f.items||[];
+  const patchItem=(id,p)=>patch({items:items.map(it=>it.id===id?{...it,...p}:it)});
+  return div({className:'fedit'},
+    div({className:'fedit-head'},span({className:'tag'},TYPE_LABEL[f.type]),div({className:'spacer'}),
+      btn({type:'button',className:'btn small','aria-label':'Mover para cima',disabled:i===0,onClick:()=>move(-1)},'↑'),
+      btn({type:'button',className:'btn small','aria-label':'Mover para baixo',disabled:i===n-1,onClick:()=>move(1)},'↓'),
+      h(Confirm,{label:'Remover',onYes:del})),
+    div({className:hasKey?'two':''},
+      lab({className:'field'},span({className:'lbl'},'Rótulo'),inp({type:'text',value:f.label,onChange:e=>patch({label:e.target.value})})),
+      hasKey?lab({className:'field'},span({className:'lbl'},'Chave para fórmulas'),inp({type:'text',className:'mono',value:f.key||'',onChange:e=>patch({key:cleanKey(e.target.value)})})):null),
+    f.type==='attr'?lab({className:'field'},span({className:'lbl'},'Modificador'),sel({value:f.modRule||'none',onChange:e=>patch({modRule:e.target.value})},opt({value:'none'},'Nenhum (o valor já é o modificador)'),opt({value:'dnd'},'Estilo D&D: (valor − 10) ÷ 2'))):null,
+    f.type==='bar'?lab({className:'field'},span({className:'lbl'},'Máximo calculado (opcional)'),inp({type:'text',className:'mono',placeholder:'vazio = você digita o máximo',value:f.maxFormula||'',onChange:e=>patch({maxFormula:e.target.value})})):null,
+    f.type==='calc'?lab({className:'field'},span({className:'lbl'},'Fórmula'),inp({type:'text',className:'mono',value:f.formula||'',onChange:e=>patch({formula:e.target.value})})):null,
+    f.type==='select'?lab({className:'field'},span({className:'lbl'},'Opções, separadas por vírgula'),h(Commit,{type:'text',value:(f.options||[]).join(', '),onCommit:v=>patch({options:v.split(',').map(x=>x.trim()).filter(Boolean)})})):null,
+    f.type==='list'?lab({className:'field'},span({className:'lbl'},'Colunas, separadas por vírgula'),h(Commit,{type:'text',value:(f.cols||[]).join(', '),onCommit:v=>patch({cols:v.split(',').map(x=>x.trim()).filter(Boolean)})})):null,
+    f.type==='skills'?div({className:'field'},
+      lab({className:'field'},span({className:'lbl'},'Regra de cálculo'),sel({value:f.rule,onChange:e=>patch({rule:e.target.value})},Object.keys(RULE_LABEL).map(k=>opt({key:k,value:k},RULE_LABEL[k])))),
+      (f.rule==='dnd'||f.rule==='t20')?div({className:'two'},
+        lab({className:'field'},span({className:'lbl'},f.rule==='dnd'?'Chave do bônus de proficiência':'Chave do bônus de treino'),inp({type:'text',className:'mono',value:f.profKey||'',onChange:e=>patch({profKey:cleanKey(e.target.value)})})),
+        f.rule==='t20'?lab({className:'field'},span({className:'lbl'},'Chave do nível'),inp({type:'text',className:'mono',value:f.levelKey||'',onChange:e=>patch({levelKey:cleanKey(e.target.value)})})):null):null,
+      span({className:'lbl'},'Perícias (nome e chave do atributo)'),
+      items.map((it,j)=>div({key:it.id,className:'item-row'},
+        inp({type:'text','aria-label':'Nome da perícia',value:it.name,onChange:e=>patchItem(it.id,{name:e.target.value})}),
+        inp({type:'text',className:'mono','aria-label':'Chave do atributo',value:it.attr||'',onChange:e=>patchItem(it.id,{attr:cleanKey(e.target.value)})}),
+        btn({type:'button',className:'btn small','aria-label':'Remover perícia',onClick:()=>patch({items:items.filter(x=>x.id!==it.id)})},'×'))),
+      div(null,btn({type:'button',className:'btn small',onClick:()=>patch({items:[...items,{id:uid(),name:'Nova perícia',attr:'',k:'p_'+uid().slice(0,4)}]})},'+ Perícia'))):null);
+}
+function AddField({secId,setLayout}){
+  const [t,setT]=useState('text');
+  return div({className:'addrow'},
+    sel({'aria-label':'Tipo de campo',value:t,onChange:e=>setT(e.target.value)},TYPE_ORDER.map(k=>opt({key:k,value:k},TYPE_LABEL[k]))),
+    btn({type:'button',className:'btn small primary',onClick:()=>setLayout(secs=>{const f=newField(t,secs);return secs.map(s=>s.id===secId?{...s,fields:[...s.fields,f]}:s);})},'Adicionar campo'));
+}
+function BuildSection({sec,i,n,setLayout}){
+  return sect({className:'sec long'},
+    div({className:'sec-head'},
+      inp({type:'text','aria-label':'Título da seção',value:sec.title,onChange:e=>setLayout(mapSec(sec.id,s=>({...s,title:e.target.value})))}),
+      btn({type:'button',className:'btn small','aria-label':'Mover seção para cima',disabled:i===0,onClick:()=>setLayout(secs=>moveArr(secs,i,-1))},'↑'),
+      btn({type:'button',className:'btn small','aria-label':'Mover seção para baixo',disabled:i===n-1,onClick:()=>setLayout(secs=>moveArr(secs,i,1))},'↓'),
+      h(Confirm,{label:'Excluir',onYes:()=>setLayout(secs=>secs.filter(s=>s.id!==sec.id))})),
+    sec.fields.map((f,j)=>h(FieldEditor,{key:f.id,f,i:j,n:sec.fields.length,secId:sec.id,setLayout})),
+    h(AddField,{secId:sec.id,setLayout}));
+}
+function FormulaHelp(){
+  return det({className:'help'},summ(null,'Como escrever fórmulas'),
+    para({className:'hint',style:{margin:'.5rem 0 0'}},'Use a chave de qualquer campo. Atributos estilo D&D também ganham a chave com sufixo _mod. Barras ganham o sufixo _max.'),
+    ul(null,
+      li(null,code(null,'10 + des_mod'),' soma 10 ao modificador de Destreza.'),
+      li(null,code(null,'floor(nivel / 2)'),' arredonda para baixo. Também existem ',code(null,'ceil'),', ',code(null,'round'),', ',code(null,'abs'),', ',code(null,'max'),' e ',code(null,'min'),'.'),
+      li(null,code(null,'ge(nivel, 7)'),' vale 1 se nivel ≥ 7, senão 0.'),
+      li(null,code(null,'pick(classe, 20, 16, 12)'),' escolhe o 1º, 2º ou 3º número conforme a opção escolhida em uma lista.')));
+}
+
+/* ---------- tela da ficha ---------- */
+function SheetView({sheet,update,onBack,initialMode,saveState}){
+  const [mode,setMode]=useState(initialMode);
+  const ctx=useMemo(()=>makeCtx(sheet),[sheet]);
+  const setVal=(fid,v)=>update(sheet.id,s=>({...s,data:{...s.data,[fid]:v},updated:Date.now()}));
+  const setLayout=(fn)=>update(sheet.id,s=>({...s,sections:fn(s.sections),updated:Date.now()}));
+  const build=mode==='build';
+  return div(null,
+    div({className:'topbar'},
+      btn({type:'button',className:'btn',onClick:onBack},'← Fichas'),
+      inp({type:'text',className:'name','aria-label':'Nome da ficha',value:sheet.name,onChange:e=>update(sheet.id,s=>({...s,name:e.target.value}))}),
+      div({className:'seg',role:'group','aria-label':'Modo'},
+        btn({type:'button','aria-pressed':!build,onClick:()=>setMode('fill')},'Preencher'),
+        btn({type:'button','aria-pressed':build,onClick:()=>setMode('build')},'Montar')),
+      span({className:'savestate'},saveState==='ok'?'Salvo neste navegador':'Não foi possível salvar')),
+    build?h(FormulaHelp):null,
+    div({className:'sections'},
+      sheet.sections.map((sec,i)=>build
+        ?h(BuildSection,{key:sec.id,sec,i,n:sheet.sections.length,setLayout})
+        :h(FillSection,{key:sec.id,sec,ctx,data:sheet.data||{},setVal}))),
+    build?div({style:{marginTop:'4px'}},btn({type:'button',className:'btn primary',onClick:()=>setLayout(secs=>[...secs,{id:uid(),title:'Nova seção',fields:[]}])},'+ Adicionar seção')):null);
+}
+
+/* ---------- tela inicial ---------- */
+function TplCard({t,onCreate}){
+  return div({className:'tpl'+(t.key==='blank'?' blank':'')},
+    span({className:'sys'},t.system),
+    h3(null,t.title),
+    para({className:'hint',style:{margin:0}},t.blurb),
+    ul(null,t.facts.map((x,i)=>li({key:i},x))),
+    btn({type:'button',className:'btn primary',onClick:()=>onCreate(t)},t.key==='blank'?'Montar do zero':'Usar este modelo'));
+}
+function importSheets(text){
+  const o=JSON.parse(text);
+  const list=Array.isArray(o)?o:(o&&Array.isArray(o.sheets)?o.sheets:[o]);
+  return list.filter(s=>s&&Array.isArray(s.sections)&&s.data&&typeof s.data==='object')
+    .map(s=>({...s,id:uid(),name:String(s.name||'Ficha importada'),updated:Date.now()}));
+}
+function Backup({sheets,onImport}){
+  const text=useMemo(()=>JSON.stringify(sheets),[sheets]);
+  const [imp,setImp]=useState('');
+  const [msg,setMsg]=useState('');
+  const ref=useRef(null);
+  const copy=()=>{
+    const fail=()=>{if(ref.current){ref.current.focus();ref.current.select();}setMsg('Texto selecionado. Copie com Ctrl+C.');};
+    try{navigator.clipboard.writeText(text).then(()=>setMsg('Copiado.'),fail);}catch(e){fail();}
+  };
+  const doImport=()=>{
+    try{const list=importSheets(imp);if(!list.length){setMsg('Nenhuma ficha válida no texto.');return;}onImport(list);setImp('');setMsg(list.length+' ficha(s) importada(s).');}
+    catch(e){setMsg('Não consegui ler esse texto.');}
+  };
+  const onFile=(e)=>{const file=e.target.files&&e.target.files[0];if(!file)return;const r=new FileReader();r.onload=()=>setImp(String(r.result||''));r.readAsText(file);};
+  return det({className:'backup'},summ(null,'Backup das fichas'),
+    div({className:'backup-body'},
+      para({className:'hint',style:{margin:0}},'As fichas ficam salvas só neste navegador. Copie o texto abaixo para guardar uma cópia ou levar para outro aparelho.'),
+      area({ref,readOnly:true,'aria-label':'Texto do backup',value:text}),
+      div({className:'inline'},btn({type:'button',className:'btn small',onClick:copy,disabled:sheets.length===0},'Copiar backup'),span({className:'hint'},msg)),
+      area({'aria-label':'Texto para importar',placeholder:'Cole aqui o backup para importar',value:imp,onChange:e=>setImp(e.target.value)}),
+      div({className:'inline'},btn({type:'button',className:'btn small',onClick:doImport,disabled:!imp.trim()},'Importar'),inp({type:'file',accept:'.json,application/json','aria-label':'Carregar arquivo de backup',onChange:onFile,style:{width:'auto'}}))));
+}
+/* ---------- dados de exemplo ---------- */
+const lnk=E('a');
+const CAMPAIGNS=[
+  {id:'valdoran',title:'A Queda de Valdoran',system:'D&D 5e',status:'Em andamento',gm:'Marina Couto',tone:'Fantasia sombria',level:'Nível 6',freq:'Quinzenal, aos sábados',next:'Sáb, 29 nov · 19h',seats:5,
+   blurb:'O Conselho dos Sete desapareceu numa só noite e o reino ficou em silêncio. O grupo cruza as Marcas Cinzentas atrás de quem ainda guarda a coroa.',
+   cast:[['Tiago Reis','Kaelen Vorn, Mago 6'],['Bia Tavares','Irena Solt, Clériga 6'],['Léo Matos','Brutus, Bárbaro 6'],['Duda Lins','Pip, Ladina 6']],
+   sessions:[['Cinzas na estalagem','O grupo encontra o único sobrevivente do Conselho e recebe um mapa queimado.'],['A estrada das Marcas','Uma emboscada de salteadores que usam o brasão do reino.'],['O sino que não toca','Na torre de Alvor, o sino guarda uma pista sobre a coroa.']]},
+  {id:'ravenna',title:'Caso Ravenna',system:'Ordem Paranormal',status:'Em andamento',gm:'Rafael Dias',tone:'Investigação e terror',level:'NEX 25%',freq:'Semanal, às quintas',next:'Qui, 27 nov · 20h',seats:4,
+   blurb:'Quatro pessoas somem em Ravenna, uma cidade pequena do interior. O único ponto em comum é um jornal de 1987 que ninguém lembra de ter assinado.',
+   cast:[['Caio Lopes','Agente Lopes, Combatente'],['Nina Prado','Dra. Prado, Ocultista'],['Gabi Nunes','Teo Marques, Especialista']],
+   sessions:[['O jornal sem data','A equipe chega à cidade e recebe a primeira cópia do jornal.'],['Entrevistas na rodoviária','Três testemunhas contam a mesma história com detalhes diferentes.'],['O porão da gráfica','Uma prensa ainda quente e nenhum funcionário à vista.']]},
+  {id:'sao-judas',title:'Noite no Hospital São Judas',system:'Ordem: Sobrevivendo ao Horror',status:'Recrutando',gm:'Rafael Dias',tone:'Terror de sobrevivência',level:'Início de jogo',freq:'Sessão única de 4h',next:'Dom, 07 dez · 14h',seats:5,
+   blurb:'A energia cai, as portas se trancam e o plantão da madrugada descobre que não está sozinho. Personagens prontos, cada um com um segredo.',
+   cast:[['Mari Alves','Enfermeira Cléo'],['Pedro Lima','Segurança Dorival'],['Sofia Reis','Residente Lúcia']],
+   sessions:[['Ato único','Do apagão ao amanhecer, com uma saída por ala.']]},
+  {id:'caravana',title:'Caravana até Valkaria',system:'Tormenta20',status:'Em andamento',gm:'Helena Prado',tone:'Aventura épica e bem-humorada',level:'Nível 4',freq:'Quinzenal, aos domingos',next:'Dom, 30 nov · 15h',seats:5,
+   blurb:'Um comboio de mercadores, uma carga que ninguém quer abrir e uma estrada longa demais para segredos curtos.',
+   cast:[['Júlia Rocha','Bruna Garra, Guerreira 4'],['Pedro Faria','Fenn, Arcanista 4'],['Vitor Sá','Irmão Tomé, Clérigo 4'],['Lara Costa','Zia, Bardo 4']],
+   sessions:[['Partida do porto','Contrato fechado e a primeira discussão sobre a carga.'],['Pedágio do barão','Uma negociação que quase vira batalha.'],['A caixa que respira','O grupo decide olhar dentro da caixa.']]},
+  {id:'mares',title:'Marés de Vidro',system:'Sistema próprio',status:'Recrutando',gm:'Otávio Reis',tone:'Fantasia náutica',level:'Sem níveis',freq:'A combinar',next:'Sessão zero: 02 dez · 20h',seats:4,
+   blurb:'Um arquipélago onde o mar vira vidro à meia-noite. Regras caseiras, com fichas montadas do zero aqui no site.',
+   cast:[['Ana Beatriz','Capitã Orla']],
+   sessions:[['Sessão zero','Criação de personagens e mapa do arquipélago.']]},
+  {id:'farol',title:'O Último Farol',system:'D&D 5e',status:'Concluída',gm:'Marina Couto',tone:'Mistério costeiro',level:'Níveis 3 a 8',freq:'Encerrada em outubro',next:'—',seats:4,
+   blurb:'Um farol que acende sozinho todas as noites e uma vila que finge não perceber. Terminou com seis sessões e muita maré.',
+   cast:[['Tiago Reis','Dorian, Bardo 8'],['Duda Lins','Mira, Patrulheira 8'],['Léo Matos','Haldor, Guerreiro 8']],
+   sessions:[['A vila que não olha','Chegada à vila e a primeira noite sem luz.'],['Os livros do guardião','Registros que se contradizem de um ano para o outro.'],['Maré alta','O confronto final na lanterna.']]},
+  {"id": "demo-camp-1", "title": "Ecos do Abismo", "system": "Ordem Paranormal", "status": "Em andamento", "gm": "Marina Couto", "tone": "Mistério e aventura", "level": "NEX 25%", "freq": "Semanal", "next": "Sáb, 05 dez · 19h", "seats": 5, "blurb": "Uma investigação sobre sinais impossíveis em uma estação de rádio abandonada.", "cast": [["Alice", "Ariel, Exploradora"], ["Bruno", "Breno, Guardião"], ["Clara", "Cora, Investigadora"], ["Diego", "Dante, Viajante"]], "sessions": [["O início da jornada", "O grupo recebe sua primeira missão."]]},
+  {"id": "demo-camp-2", "title": "Sombras de Arton", "system": "Tormenta20", "status": "Em andamento", "gm": "Marina Couto", "tone": "Mistério e aventura", "level": "Nível 4", "freq": "Semanal", "next": "Dom, 06 dez · 15h", "seats": 6, "blurb": "Uma guilda desaparece deixando apenas cartas marcadas com um símbolo desconhecido.", "cast": [["Alice", "Ariel, Exploradora"], ["Bruno", "Breno, Guardião"], ["Clara", "Cora, Investigadora"], ["Diego", "Dante, Viajante"], ["Eva", "Elara, Curandeira"]], "sessions": [["O início da jornada", "O grupo recebe sua primeira missão."], ["Novas pistas", "Os personagens investigam os acontecimentos."]]},
+  {"id": "demo-camp-3", "title": "O Último Ritual", "system": "Ordem Paranormal", "status": "Em andamento", "gm": "Marina Couto", "tone": "Mistério e aventura", "level": "NEX 25%", "freq": "Semanal", "next": "A combinar", "seats": 4, "blurb": "Uma cidade inteira esqueceu a mesma noite. Os agentes precisam reconstruir os acontecimentos antes que a memória desapareça novamente.", "cast": [["Alice", "Ariel, Exploradora"], ["Bruno", "Breno, Guardião"], ["Clara", "Cora, Investigadora"]], "sessions": [["O início da jornada", "O grupo recebe sua primeira missão."]]},
+  {"id": "demo-camp-4", "title": "A Coroa de Cinzas", "system": "D&D 5e", "status": "Em andamento", "gm": "Marina Couto", "tone": "Mistério e aventura", "level": "Nível 3", "freq": "Semanal", "next": "Sex, 11 dez · 20h", "seats": 7, "blurb": "Uma disputa pelo trono divide três reinos.", "cast": [["Alice", "Ariel, Exploradora"], ["Bruno", "Breno, Guardião"], ["Clara", "Cora, Investigadora"], ["Diego", "Dante, Viajante"], ["Eva", "Elara, Curandeira"], ["Felipe", "Finn, Batedor"]], "sessions": [["O início da jornada", "O grupo recebe sua primeira missão."], ["Novas pistas", "Os personagens investigam os acontecimentos."]]},
+  {"id": "demo-camp-5", "title": "Além do Véu", "system": "Ordem: Sobrevivendo ao Horror", "status": "Em andamento", "gm": "Marina Couto", "tone": "Mistério e aventura", "level": "Início de jogo", "freq": "Semanal", "next": "Sáb, 05 dez · 19h", "seats": 5, "blurb": "Uma expedição encontra uma vila isolada onde o tempo parece não avançar.", "cast": [["Alice", "Ariel, Exploradora"], ["Bruno", "Breno, Guardião"], ["Clara", "Cora, Investigadora"], ["Diego", "Dante, Viajante"]], "sessions": [["O início da jornada", "O grupo recebe sua primeira missão."]]},
+  {"id": "demo-camp-6", "title": "Mar de Estrelas", "system": "Sistema próprio", "status": "Em andamento", "gm": "Marina Couto", "tone": "Mistério e aventura", "level": "Início de jogo", "freq": "Semanal", "next": "Dom, 06 dez · 15h", "seats": 3, "blurb": "Exploradores atravessam ilhas flutuantes em busca de uma rota perdida.", "cast": [["Alice", "Ariel, Exploradora"], ["Bruno", "Breno, Guardião"]], "sessions": [["O início da jornada", "O grupo recebe sua primeira missão."], ["Novas pistas", "Os personagens investigam os acontecimentos."]]},
+  {"id": "demo-camp-7", "title": "As Crônicas do Reino Esquecido e dos Guardiões da Última Chama Eterna", "system": "D&D 5e", "status": "Em andamento", "gm": "Marina Couto", "tone": "Mistério e aventura", "level": "Nível 3", "freq": "Semanal", "next": "A combinar", "seats": 6, "blurb": "Os guardiões da última chama precisam atravessar montanhas, ruínas e cidades esquecidas para descobrir por que as estrelas estão desaparecendo. Durante a jornada, alianças antigas serão colocadas à prova, novos inimigos surgirão e cada decisão poderá alterar o destino de todo o reino. Uma profecia contraditória oferece pistas, mas ninguém sabe quem escreveu suas últimas páginas. O grupo terá de decidir em quem confiar antes que o inverno eterno alcance a capital.", "cast": [["Alice", "Ariel, Exploradora"], ["Bruno", "Breno, Guardião"], ["Clara", "Cora, Investigadora"], ["Diego", "Dante, Viajante"], ["Eva", "Elara, Curandeira"]], "sessions": [["O início da jornada", "O grupo recebe sua primeira missão."]]},
+  {"id": "demo-camp-8", "title": "O Bosque Silencioso", "system": "Tormenta20", "status": "Em andamento", "gm": "Marina Couto", "tone": "Mistério e aventura", "level": "Nível 4", "freq": "Semanal", "next": "Sex, 11 dez · 20h", "seats": 4, "blurb": "Árvores sussurram nomes de viajantes desaparecidos.", "cast": [["Alice", "Ariel, Exploradora"], ["Bruno", "Breno, Guardião"], ["Clara", "Cora, Investigadora"]], "sessions": [["O início da jornada", "O grupo recebe sua primeira missão."], ["Novas pistas", "Os personagens investigam os acontecimentos."]]},
+  {"id": "demo-camp-9", "title": "Arquivo 47", "system": "Ordem Paranormal", "status": "Em andamento", "gm": "Marina Couto", "tone": "Mistério e aventura", "level": "NEX 25%", "freq": "Semanal", "next": "Sáb, 05 dez · 19h", "seats": 5, "blurb": "Documentos secretos revelam uma sequência de eventos inexplicáveis.", "cast": [["Alice", "Ariel, Exploradora"], ["Bruno", "Breno, Guardião"], ["Clara", "Cora, Investigadora"], ["Diego", "Dante, Viajante"]], "sessions": [["O início da jornada", "O grupo recebe sua primeira missão."]]},
+  {"id": "demo-camp-10", "title": "A Cidade Submersa", "system": "D&D 5e", "status": "Em andamento", "gm": "Marina Couto", "tone": "Mistério e aventura", "level": "Nível 3", "freq": "Semanal", "next": "Dom, 06 dez · 15h", "seats": 7, "blurb": "Uma cidade emerge do oceano durante uma única noite.", "cast": [["Alice", "Ariel, Exploradora"], ["Bruno", "Breno, Guardião"], ["Clara", "Cora, Investigadora"], ["Diego", "Dante, Viajante"], ["Eva", "Elara, Curandeira"], ["Felipe", "Finn, Batedor"]], "sessions": [["O início da jornada", "O grupo recebe sua primeira missão."], ["Novas pistas", "Os personagens investigam os acontecimentos."]]},
+  {"id": "demo-camp-11", "title": "Fronteira de Ferro", "system": "Sistema próprio", "status": "Em andamento", "gm": "Marina Couto", "tone": "Mistério e aventura", "level": "Início de jogo", "freq": "Semanal", "next": "A combinar", "seats": 3, "blurb": "Uma equipe protege a última estação de uma ferrovia esquecida.", "cast": [["Alice", "Ariel, Exploradora"], ["Bruno", "Breno, Guardião"]], "sessions": [["O início da jornada", "O grupo recebe sua primeira missão."]]}
+];
+const CAMP_SYSTEMS=['Todas','D&D 5e','Ordem Paranormal','Ordem: Sobrevivendo ao Horror','Tormenta20','Sistema próprio'];
+const statusCls=(s)=>s==='Em andamento'?'pill on':s==='Recrutando'?'pill warn':'pill';
+const EX_COMBAT={round:1,turn:0,list:[
+  {id:'c1',name:'Kaelen Vorn',init:18,hp:34},
+  {id:'c2',name:'Cavaleiro Hollow',init:15,hp:52},
+  {id:'c3',name:'Irena Solt',init:12,hp:41},
+  {id:'c4',name:'Salteador 1',init:9,hp:11},
+  {id:'c5',name:'Salteador 2',init:7,hp:11}
+]};
+const EX_TODO=[
+  ['t1','Revisar o mapa da estalagem do Corvo'],
+  ['t2','Preparar o Cavaleiro Hollow (armadura vazia, voz do antigo capitão)'],
+  ['t3','Definir a consequência de o grupo ter fugido da Marca Cinzenta'],
+  ['t4','Separar a música para a cena do sino']
+];
+const EX_NPCS=[
+  ['Ordenadora Vessa','Antagonista','Fala baixo e não piscou desde a queda do reino.'],
+  ['Brum, o estalajadeiro','Aliado','Sabe mais do que conta e cobra em favores.'],
+  ['Cavaleiro Hollow','Combate','Armadura vazia que usa a voz do antigo capitão.'],
+  ['Pip do Sino','Informante','Troca notícias por doces e nunca fica no mesmo telhado.']
+];
+
+/* ---------- rotas e utilidades de interface ---------- */
+const getRoute=()=>(location.hash||'#inicio').slice(1)||'inicio';
+const go=(r)=>{location.hash=r;};
+function useRoute(){
+  const [r,setR]=useState(getRoute);
+  useEffect(()=>{
+    const f=()=>{setR(getRoute());try{window.scrollTo(0,0);}catch(e){}};
+    window.addEventListener('hashchange',f);
+    return ()=>window.removeEventListener('hashchange',f);
+  },[]);
+  return r;
+}
+function useLS(key,init){
+  const [v,setV]=useState(()=>{try{const r=localStorage.getItem(key);if(r!==null)return JSON.parse(r);}catch(e){}return init;});
+  useEffect(()=>{try{localStorage.setItem(key,JSON.stringify(v));}catch(e){}},[key,v]);
+  return [v,setV];
+}
+function D20Icon({size}){
+  const p={fill:'none',stroke:'currentColor',strokeWidth:2.2,strokeLinejoin:'round',strokeLinecap:'round'};
+  return h('svg',{viewBox:'0 0 48 48',width:size||24,height:size||24,'aria-hidden':'true'},
+    h('polygon',{...p,points:'24,3 43,14 43,34 24,45 5,34 5,14'}),
+    h('polygon',{...p,points:'24,13 34,31 14,31'}),
+    h('path',{...p,d:'M24 3v10M43 14L34 31M5 14l9 17M43 34l-9-3M5 34l9-3M24 45V31'}));
+}
+const NAV=[['inicio','Início'],['campanhas','Campanhas'],['mestre','Área do mestre'],['jogadores','Área dos jogadores'],['fichas','Fichas']];
+function Nav({route}){
+  const cur=route.startsWith('ficha-')?'fichas':route.startsWith('campanha-')?'campanhas':route;
+  return h('nav',{className:'nav','aria-label':'Principal'},
+    lnk({className:'brand',href:'#inicio'},h(D20Icon,{size:26}),'Forja de Fichas'),
+    div({className:'nav-links'},NAV.map(([k,l])=>lnk({key:k,href:'#'+k,'aria-current':cur===k?'page':undefined},l))));
+}
+function PageHead({eyebrow,title,lead}){
+  return hdr({className:'page-head'},span({className:'sys'},eyebrow),h1(null,title),lead?para({className:'lead'},lead):null);
+}
+const ExampleNote=({children})=>para({className:'note'},children||'Exemplo: os dados desta página são fictícios e servem para mostrar como o site ficaria.');
+
+/* ---------- rolador de dados ---------- */
+const DICE=[4,6,8,10,12,20,100];
+function DiceRoller({compact}){
+  const [qty,setQty]=useState(1);
+  const [mod,setMod]=useState('0');
+  const [adv,setAdv]=useState('normal');
+  const [log,setLog]=useState([]);
+  const [rolling,setRolling]=useState(false);
+  const [preview,setPreview]=useState(20);
+  const timers=useRef(null);
+  useEffect(()=>()=>{if(timers.current){clearInterval(timers.current.interval);clearTimeout(timers.current.timeout);}},[]);
+  const animateRoll=()=>{
+    if(timers.current)return;
+    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){roll(20);return;}
+    setRolling(true);setPreview(1+Math.floor(Math.random()*20));
+    const interval=setInterval(()=>setPreview(1+Math.floor(Math.random()*20)),85);
+    const timeout=setTimeout(()=>{clearInterval(interval);timers.current=null;roll(20);setRolling(false);},850);
+    timers.current={interval,timeout};
+  };
+  const roll=(sides)=>{
+    const rr=()=>1+Math.floor(Math.random()*sides);
+    const n=compact?1:Math.max(1,Math.min(20,Math.floor(num(qty))||1));
+    const m=compact?0:Math.round(num(mod));
+    let base,detail='';
+    if(sides===20&&n===1&&adv!=='normal'){
+      const a=rr(),b=rr();
+      base=adv==='vantagem'?Math.max(a,b):Math.min(a,b);
+      detail=a+' e '+b+' ('+adv+')';
+    }else{
+      const rolls=[];
+      for(let i=0;i<n;i++)rolls.push(rr());
+      base=rolls.reduce((x,y)=>x+y,0);
+      detail=n>1?rolls.join(' + '):'';
+    }
+    const label=n+'d'+sides+(m?(m>0?'+':'−')+Math.abs(m):'');
+    const nat=(sides===20&&n===1)?(base===20?'20 natural':base===1?'1 natural':''):'';
+    setLog(l=>[{id:uid(),label,total:base+m,detail,nat},...l].slice(0,6));
+  };
+  const last=log[0];
+  const out=div({className:'result','aria-live':'polite'},
+    last?b2(last.total):span({className:'hint'},'Escolha um dado para rolar.'),
+    last?span({className:'hint'},last.label+(last.detail?' · '+last.detail:'')+(last.nat?' · '+last.nat:'')):null);
+  if(compact){
+    return div({className:'dice-card'},
+      div({className:'dice-main'},div({className:'dice-face'+(rolling?' rolling':last?' landed':''),key:rolling?'rolling':last?last.id:'initial'},h(D20Icon,{size:150}),span({'aria-hidden':rolling},rolling?String(preview):last?String(last.total):'20')),
+      div({'aria-live':'polite',className:'hint'},rolling?'Rolando…':last?(last.nat||'Resultado do d20'):'Role um d20 agora'),
+      btn({type:'button',className:'btn primary',disabled:rolling,onClick:animateRoll},'Rolar d20')),
+      div({className:'dice-history'},b2('Histórico'),span({className:'hint'},'↓ Mais recentes no topo'),
+      log.length>1?div({className:'log'},log.slice(1).map(x=>div({key:x.id,className:'roll-entry'},span(null,x.label),b2(x.total)))):span({className:'hint'},'As rolagens anteriores aparecem aqui.')));
+  }
+  return div({className:'roller'},
+    div({className:'rollopts'},
+      lab({className:'field'},span({className:'lbl'},'Quantidade'),inp({type:'number',min:1,max:20,value:qty,onChange:e=>setQty(e.target.value)})),
+      lab({className:'field'},span({className:'lbl'},'Modificador'),inp({type:'number',value:mod,onChange:e=>setMod(e.target.value)})),
+      lab({className:'field wide'},span({className:'lbl'},'Em 1d20'),sel({value:adv,onChange:e=>setAdv(e.target.value)},opt({value:'normal'},'Normal'),opt({value:'vantagem'},'Vantagem'),opt({value:'desvantagem'},'Desvantagem')))),
+    div({className:'dice-row'},DICE.map(s=>btn({key:s,type:'button',className:'btn',onClick:()=>roll(s)},'d'+s))),
+    out,
+    log.length>1?div({className:'log'},log.slice(1).map(x=>span({key:x.id},x.label+' = '+x.total+(x.detail?'  ('+x.detail+')':'')))):null);
+}
+const b2=(t)=>h('b',null,String(t));
+
+/* ---------- campanhas ---------- */
+function RoleTag({c}){return span({className:'role-tag '+(c.myRole==='master'?'master':'player')},c.myRole==='master'?'Mestre':'Jogador');}
+function CampaignCard({c}){
+  return div({className:'camp'},
+    div({className:'inline'},span({className:'sys'},c.system),span({className:statusCls(c.status)},c.status),c.myRole?h(RoleTag,{c}):null),
+    h3(null,c.title),
+    para(null,c.blurb),
+    div({className:'meta'},span(null,'Mestre: '+c.gm),span(null,c.cast.length+' de '+c.seats+' lugares'),c.next!=='—'?span(null,'Próxima: '+c.next):null),
+    div({className:'foot'},lnk({className:'btn small primary',href:(c.myRole==='master'?'#mestre-':'#jogador-')+c.id},c.myRole==='master'?'Gerenciar campanha':'Ver campanha')));
+}
+function pageButtons(pages,current,setPage){
+ const start=Math.floor((current-1)/4)*4+1;
+ const end=Math.min(start+3,pages);
+ const jump=(target,key)=>btn({key,type:'button',className:'btn small',title:'Ir para página '+target,'aria-label':'Ir para página '+target,onClick:()=>setPage(target)},'…');
+ return [...(start>1?[jump(start-1,'prev-group')]:[]),...Array.from({length:end-start+1},(_,i)=>{const n=start+i;return btn({key:n,type:'button',className:'btn small','aria-current':current===n?'page':undefined,onClick:()=>setPage(n)},String(n));}),...(end<pages?[jump(end+1,'next-group')]:[])];
+}
+function CampaignsPage({campaigns,onCreate}){
+ const [creating,setCreating]=useState(false);
+ const [layout,setLayout]=useLS('forja-campaign-layout','normal');
+ const [page,setPage]=useState(1);
+ const [roleFilter,setRoleFilter]=useState("all");
+ const initial={title:'',blurb:'',system:'D&D 5e',custom:'',tone:'',level:'',freq:'A combinar',date:'',time:'',seats:4,status:'Em andamento',rules:''};
+ const [f,setF]=useState(initial);
+ const field=(k,label,type='text',required=false)=>lab({className:'field'},span({className:'lbl'},label),inp({type,required,value:f[k],min:type==='number'?1:undefined,max:type==='number'?30:undefined,onChange:e=>setF(old=>({...old,[k]:e.target.value}))}));
+ const select=(k,label,opts)=>lab({className:'field'},span({className:'lbl'},label),sel({value:f[k],onChange:e=>setF(old=>({...old,[k]:e.target.value}))},opts.map(v=>opt({key:v,value:v},v))));
+ const long=(k,label,required=false)=>lab({className:'field'},span({className:'lbl'},label),area({required,value:f[k],onChange:e=>setF(old=>({...old,[k]:e.target.value}))}));
+ const submit=e=>{e.preventDefault();if(!f.title.trim()||!f.blurb.trim()||(f.system==='Sistema próprio'&&!f.custom.trim()))return;const next=f.date?new Date(f.date+'T12:00:00').toLocaleDateString('pt-BR')+(f.time?' · '+f.time:''):'A combinar';onCreate({id:'local-'+uid(),title:f.title.trim(),blurb:f.blurb.trim(),system:f.system==='Sistema próprio'?f.custom.trim():f.system,gm:'Você',owned:true,status:f.status,tone:f.tone||'A definir',level:f.level||'A definir',freq:f.freq,next,seats:Number(f.seats),rules:f.rules,cast:[],sessions:[]});setF(initial);setCreating(false);setRoleFilter("all");setPage(1);};
+ if(creating)return div(null,h(PageHead,{eyebrow:'Campanhas',title:'Criar campanha',lead:'Defina as informações iniciais da sua mesa. Você poderá preparar as sessões no painel do mestre.'}),h('form',{className:'panel campaign-form',onSubmit:submit},
+ div({className:'cf-grid'},
+ div({className:'cf-section'},div({className:'cf-heading'},span(null,'01'),div(null,h2(null,'Informações gerais'),para({className:'hint'},'Dê identidade à sua aventura.'))),field('title','Título da campanha','text',true),long('blurb','Descrição / sinopse',true),div({className:'cf-system'},select('system','Sistema de RPG',CAMP_SYSTEMS.slice(1)),field('tone','Gênero / tom')),f.system==='Sistema próprio'?field('custom','Nome do sistema','text',true):null,div({className:'cf-small'},field('level',f.system.startsWith('Ordem')?'Nível inicial / NEX':'Nível inicial'),field('seats','Limite de jogadores','number',true))),
+ div({className:'cf-section'},div({className:'cf-heading'},span(null,'02'),div(null,h2(null,'Organização da mesa'),para({className:'hint'},'Combine como e quando jogar.'))),div({className:'cf-system'},select('freq','Frequência',['A combinar','Flexível — conforme disponibilidade','Semanal','Quinzenal','Mensal','Sessão única']),select('status','Status',['Em andamento','Recrutando'])),div({className:'cf-schedule'},h3(null,'Primeira sessão'),para({className:'hint'},'Opcional — você pode definir depois.'),div({className:'cf-dates'},field('date','Data','date'),field('time','Horário','time'))),long('rules','Regras da mesa e acordos de convivência (opcional)'))),
+ div({className:'cf-actions'},span({className:'hint'},'Você poderá editar os dados da campanha posteriormente.'),div({className:'inline'},btn({type:'button',className:'btn',onClick:()=>setCreating(false)},'Cancelar'),btn({type:'submit',className:'btn primary'},'Criar campanha')))));
+ const filtered=campaigns.filter(c=>roleFilter==='all'||c.myRole===roleFilter);
+ const compact=layout==='compact',size=compact?9:3,count=filtered.length,pages=Math.max(1,Math.ceil(count/size)),current=Math.min(page,pages);
+ return div({className:'gm-list'},div({className:'gm-list-head'},h(PageHead,{eyebrow:'Campanhas',title:'Suas campanhas',lead:'Crie uma nova mesa ou acompanhe suas campanhas existentes.'}),div({className:'gm-layout'},span({className:'hint'},'Visualização'),div({className:'seg'},['normal','compact'].map(v=>btn({key:v,'aria-pressed':layout===v,onClick:()=>{setLayout(v);setPage(1);}},h(LayoutIcon,{compact:v==='compact'}),v==='normal'?'Normal':'Compacto'))))),div({className:'campaign-filter-toolbar'},div({className:'gm-layout'},span({className:'hint'},'Filtrar por'),div({className:'seg',role:'group','aria-label':'Filtrar campanhas por função'},[['all','Todas'],['master','Mestre'],['player','Jogador']].map(([v,label])=>btn({key:v,type:'button','aria-pressed':roleFilter===v,onClick:()=>{setRoleFilter(v);setPage(1);}},label)))),btn({className:'btn primary',onClick:()=>setCreating(true)},'+ Criar campanha')),count?div({className:'gm-cards'+(compact?' compact':'')},filtered.slice((current-1)*size,current*size).map(c=>div({key:c.id,className:'camp'},compact?div({className:'campaign-role-row'},h3({title:c.title},c.title),h(RoleTag,{c})):div({className:'campaign-role-row'},span({className:'sys',title:c.system},c.system),h(RoleTag,{c})),compact?null:h3({title:c.title},c.title),compact?null:para({title:c.blurb},c.blurb),span({className:'hint',title:c.cast.length+' jogadores · '+c.next},c.cast.length+' jogadores · '+c.next),lnk({className:'btn primary',href:(c.myRole==='master'?'#mestre-':'#jogador-')+c.id},c.myRole==='master'?'Gerenciar campanha':'Ver campanha')))):div({className:'empty'},roleFilter==='all'?'Nenhuma campanha. Crie sua primeira mesa!':'Nenhuma campanha encontrada para esta função.'),div({className:'gm-pagination'},span({className:'hint'},count?'Mostrando '+((current-1)*size+1)+'–'+Math.min(current*size,count)+' de '+count+' campanhas':'0 campanhas'),div({className:'inline'},btn({className:'btn small',disabled:current===1,onClick:()=>setPage(current-1)},'‹'),pageButtons(pages,current,setPage),btn({className:'btn small',disabled:current===pages,onClick:()=>setPage(current+1)},'›'))));
+}
+function CampaignDetail({id,campaigns=CAMPAIGNS}){
+  const c=campaigns.find(x=>x.id===id);
+  if(!c)return div(null,h(PageHead,{eyebrow:'Campanhas',title:'Campanha não encontrada'}),lnk({className:'btn',href:'#campanhas'},'← Todas as campanhas'));
+  return div(null,
+    lnk({className:'btn small',href:'#campanhas'},'← Todas as campanhas'),
+    div({style:{marginTop:'18px'}},
+      div({className:'inline'},span({className:'sys'},c.system),span({className:statusCls(c.status)},c.status),c.myRole?h(RoleTag,{c}):null),
+      h1({style:{fontSize:'clamp(1.9rem,5vw,2.6rem)',marginTop:'.4rem'}},c.title),
+      para({className:'lead'},c.blurb)),
+    c.myRole==='master'?lnk({className:'btn primary',href:(player?'#jogador-':'#mestre-')+c.id},player?'Ver campanha':'Gerenciar campanha'):h(ExampleNote),
+    div({className:'detail'},
+      div({className:'stack'},
+        sect({className:'panel'},h2(null,'Sessões até agora'),
+          div({className:'tl'},c.sessions.map(([t,s],i)=>div({key:i},b2(t),span(null,s))))),
+        sect({className:'panel'},h2(null,'Mesa'),
+          div({className:'cast'},
+            div(null,span({className:'lbl'},'Mestre'),span(null,c.gm)),
+            c.cast.map(([p,ch],i)=>div({key:i},span(null,p),span({className:'hint'},ch)))))),
+      div({className:'stack'},
+        sect({className:'panel'},h2(null,'Informações'),
+          div({className:'cast'},
+            div(null,span({className:'lbl'},'Próxima sessão'),span(null,c.next)),
+            div(null,span({className:'lbl'},'Frequência'),span(null,c.freq)),
+            div(null,span({className:'lbl'},'Tom'),span(null,c.tone)),
+            div(null,span({className:'lbl'},'Nível'),span(null,c.level)),
+            c.rules?div(null,span({className:'lbl'},'Regras da mesa'),span(null,c.rules)):null,
+            div(null,span({className:'lbl'},'Lugares'),span(null,c.cast.length+' de '+c.seats+' ocupados')))),
+        sect({className:'panel'},h2(null,'Quer jogar assim?'),
+          para({className:'hint',style:{margin:'0 0 10px'}},'Crie uma ficha para este sistema e leve para a mesa.'),
+          lnk({className:'btn primary',href:'#fichas'},'Criar uma ficha')))));
+}
+
+/* ---------- área do mestre ---------- */
+function Initiative({campaignId='valdoran'}={}){
+  const [st,setSt]=useLS(campaignId==='valdoran'?'forja-iniciativa':'forja-iniciativa-'+campaignId,campaignId==='valdoran'?EX_COMBAT:{round:1,turn:0,list:[]});
+  const [nm,setNm]=useState('');
+  const [ini,setIni]=useState('');
+  const [hp,setHp]=useState('');
+  const list=st.list||[];
+  const add=(e)=>{
+    e.preventDefault();
+    if(!nm.trim())return;
+    const item={id:uid(),name:nm.trim(),init:num(ini),hp:hp===''?null:num(hp)};
+    const cur=list[st.turn];
+    const l=[...list,item].sort((x,y)=>y.init-x.init);
+    const turn=cur?Math.max(0,l.findIndex(x=>x.id===cur.id)):0;
+    setSt({...st,list:l,turn});
+    setNm('');setIni('');setHp('');
+  };
+  const next=()=>{if(!list.length)return;const t=st.turn+1;setSt(t>=list.length?{...st,turn:0,round:st.round+1}:{...st,turn:t});};
+  const remove=(id)=>{
+    const idx=list.findIndex(x=>x.id===id);
+    const l=list.filter(x=>x.id!==id);
+    let turn=idx<st.turn?st.turn-1:st.turn;
+    if(turn>=l.length)turn=0;
+    setSt({...st,list:l,turn});
+  };
+  const hpBy=(id,d)=>setSt({...st,list:list.map(x=>x.id===id&&x.hp!==null?{...x,hp:x.hp+d}:x)});
+  return sect({className:'panel'},h2(null,'Iniciativa'),
+    div({className:'ini-bar'},
+      span({className:'pill on'},'Rodada '+st.round),
+      btn({type:'button',className:'btn small primary',onClick:next,disabled:!list.length},'Próximo turno'),
+      btn({type:'button',className:'btn small',onClick:()=>setSt({...st,round:1,turn:0})},'Voltar à rodada 1'),
+      btn({type:'button',className:'btn small',onClick:()=>setSt({round:1,turn:0,list:[]})},'Limpar')),
+    h('form',{className:'ini-add',onSubmit:add},
+      inp({type:'text',id:'ini-nome','aria-label':'Nome',placeholder:'Nome',value:nm,onChange:e=>setNm(e.target.value)}),
+      inp({type:'number',id:'ini-valor','aria-label':'Iniciativa',placeholder:'Inic.',value:ini,onChange:e=>setIni(e.target.value)}),
+      inp({type:'number',id:'ini-pv','aria-label':'Pontos de vida',placeholder:'PV',value:hp,onChange:e=>setHp(e.target.value)}),
+      btn({type:'submit',className:'btn'},'Adicionar')),
+    list.length===0?div({className:'empty',style:{marginTop:0}},'Ninguém na ordem de iniciativa. Adicione os combatentes acima.'):
+    div(null,list.map((x,i)=>div({key:x.id,className:'ini-row'+(i===st.turn?' now':'')},
+      div({className:'ini-n'},String(x.init)),
+      span(null,x.name),
+      x.hp===null?span({className:'hint'},'sem PV'):div({className:'hpbox'},
+        btn({type:'button',className:'btn small','aria-label':'Diminuir PV de '+x.name,onClick:()=>hpBy(x.id,-1)},'−'),
+        span(null,String(x.hp)),
+        btn({type:'button',className:'btn small','aria-label':'Aumentar PV de '+x.name,onClick:()=>hpBy(x.id,1)},'+')),
+      btn({type:'button',className:'btn small rm','aria-label':'Remover '+x.name,onClick:()=>remove(x.id)},'×')))),
+    para({className:'hint',style:{margin:'10px 0 0'}},'Os combatentes de exemplo podem ser editados ou removidos. A lista fica salva neste navegador.'));
+}
+function Roteiro(){
+  const [done,setDone]=useLS('forja-roteiro',{});
+  const total=EX_TODO.length,ok=EX_TODO.filter(([id])=>done[id]).length;
+  return sect({className:'panel'},h2(null,'Roteiro da próxima sessão'),
+    para({className:'hint',style:{margin:'0 0 6px'}},'A Queda de Valdoran, sábado às 19h. '+ok+' de '+total+' itens prontos.'),
+    EX_TODO.map(([id,t])=>lab({key:id,className:'todo'+(done[id]?' done':'')},
+      inp({type:'checkbox',checked:!!done[id],onChange:e=>setDone({...done,[id]:e.target.checked})}),span(null,t))));
+}
+function Notas({storeKey,title,hint,placeholder,id}){
+  const [t,setT]=useLS(storeKey,'');
+  return sect({className:'panel'},h2(null,title),
+    para({className:'hint',style:{margin:'0 0 8px'}},hint),
+    area({id,'aria-label':title,placeholder,value:t,onChange:e=>setT(e.target.value),style:{minHeight:'9rem'}}));
+}
+function Npcs(){
+  return sect({className:'panel'},h2(null,'NPCs da campanha'),
+    EX_NPCS.map(([n,r,d])=>div({key:n,className:'npc'},div({className:'inline'},b2(n),span({className:'pill'},r)),para(null,d))));
+}
+const GM_CAMPS=CAMPAIGNS.filter(c=>c.gm==='Marina Couto'&&c.status==='Em andamento');
+function LayoutIcon({compact}){
+ return h('svg',{viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.6,'aria-hidden':true},(compact?[2,9,16]:[5]).flatMap((y,j)=>[2,9,16].map((x,i)=>h('rect',{key:j+'-'+i,x,y,width:6,height:compact?6:14,rx:1}))));
+}
+function MestrePage({campaigns=GM_CAMPS,player=false}){
+ const [layout,setLayout]=useLS(player?'forja-player-list-layout':'forja-gm-list-layout','normal');
+ const [page,setPage]=useState(1);
+ const compact=layout==='compact',size=compact?9:3;
+ const count=campaigns.length,pages=Math.max(1,Math.ceil(count/size)),current=Math.min(page,pages);
+ const visible=campaigns.slice((current-1)*size,current*size);
+ const changeLayout=v=>{setLayout(v);setPage(1);};
+ return div({className:'gm-list'},
+  div({className:'gm-list-head'},h(PageHead,{eyebrow:player?'Área dos jogadores':'Área do mestre',title:'Suas campanhas',lead:player?'Selecione uma campanha para abrir sua ficha e painel de jogador.':'Selecione uma campanha ativa para abrir seu painel de mestre.'}),
+   div({className:'gm-layout'},span({className:'hint'},'Visualização'),div({className:'seg',role:'group','aria-label':'Layout das campanhas'},
+    btn({type:'button','aria-pressed':!compact,onClick:()=>changeLayout('normal'),title:'3 campanhas por página'},h(LayoutIcon,{compact:false}),'Normal'),
+    btn({type:'button','aria-pressed':compact,onClick:()=>changeLayout('compact'),title:'9 campanhas por página'},h(LayoutIcon,{compact:true}),'Compacto')))),
+  h(ExampleNote),
+  count?div({className:'gm-cards'+(compact?' compact':'')},visible.map(c=>div({key:c.id,className:'camp'},
+   compact?null:span({className:'sys',title:c.system},c.system),h3({title:c.title},c.title),compact?null:para({title:c.blurb},c.blurb),span({className:'hint',title:c.cast.length+' jogadores · '+c.next},c.cast.length+' jogadores · '+c.next),
+   lnk({className:'btn primary',href:(player?'#jogador-':'#mestre-')+c.id},player?'Ver campanha':'Gerenciar campanha')))):div({className:'empty'},'Nenhuma campanha ativa.'),
+  div({className:'gm-pagination'},span({className:'hint','aria-live':'polite'},count?'Mostrando '+((current-1)*size+1)+'–'+Math.min(current*size,count)+' de '+count+' campanhas':'0 campanhas'),
+   div({className:'inline',role:'navigation','aria-label':'Paginação das campanhas'},
+    btn({type:'button',className:'btn small',disabled:current===1,onClick:()=>setPage(current-1),'aria-label':'Página anterior'},'‹'),
+    pageButtons(pages,current,setPage),
+    btn({type:'button',className:'btn small',disabled:current===pages,onClick:()=>setPage(current+1),'aria-label':'Próxima página'},'›'))));
+}
+const GM_TABS=[['overview','▦','Visão geral'],['sessions','▣','Sessões'],['players','♙','Jogadores'],['npcs','♧','NPCs'],['combat','⚔','Combates'],['plot','▤','Roteiro'],['places','◇','Locais'],['notes','▧','Anotações'],['settings','⚙','Configurações']];
+function MasterDashboard({campaign}){
+ const c=campaign;
+ const [tab,setTab]=useState('overview');
+ const [done,setDone]=useLS(c.id==='valdoran'?'forja-roteiro':'forja-roteiro-'+c.id,{});
+ const [settings,setSettings]=useLS('forja-settings-'+c.id,{title:c.title,blurb:c.blurb,next:c.next});
+ const [npcs,setNpcs]=useLS('forja-npcs-'+c.id,c.id==='valdoran'?EX_NPCS:[]);
+ const [sessions,setSessions]=useLS('forja-sessions-'+c.id,c.sessions);
+ const [players,setPlayers]=useLS('forja-players-'+c.id,c.cast);
+ const [places,setPlaces]=useLS('forja-places-'+c.id,[]);
+ const tasks=c.id==='valdoran'?EX_TODO:[];const ok=tasks.filter(([id])=>done[id]).length;
+ const people=()=>sect({className:'panel'},h2(null,'Personagens da campanha'),players.map(([p,ch],i)=>div({key:i,className:'gm-person'},span({className:'gm-avatar'},(ch||p||'?')[0]),div({className:'grow'},b2(ch.split(',')[0]),div({className:'hint'},p+' · '+ch.split(',').slice(1).join(',').trim())),btn({className:'btn small',onClick:()=>setTab('players')},'›'))));
+ const editList=(title,items,setItems,labels)=>sect({className:'panel'},h2(null,title),items.map((item,i)=>div({key:i,className:'npc'},labels.map((label,j)=>lab({key:j,className:'field'},span({className:'lbl'},label),inp({value:item[j]||'',onChange:e=>setItems(old=>old.map((x,k)=>k===i?labels.map((_,z)=>z===j?e.target.value:x[z]||''):x))}))),h(Confirm,{label:'Remover',onYes:()=>setItems(old=>old.filter((_,k)=>k!==i))}))),btn({className:'btn primary',onClick:()=>setItems(old=>[...old,labels.map(()=> '')])},'+ Adicionar'));
+ let content;
+ if(tab==='overview')content=[div({key:'banner',className:'gm-banner'},span({className:'sys'},c.system),h2(null,settings.title),para({style:{margin:0}},settings.blurb)),div({key:'stats',className:'gm-stats'},[[players.length,'Jogadores'],[sessions.length,'Sessões'],[npcs.length,'NPCs']].map(([n,l])=>div({key:l,className:'panel'},b2(n),span(null,l)))),sect({key:'next',className:'panel'},h2(null,'Próxima sessão'),b2(settings.next),div({className:'hint'},'Preparação da sessão'),div({className:'gm-progress'},div({style:{width:(tasks.length?ok/tasks.length*100:0)+'%'}})),span({className:'hint'},ok+' de '+tasks.length+' tarefas concluídas')),div({key:'people'},people())];
+ else if(tab==='sessions')content=editList('Sessões',sessions,setSessions,['Título','Resumo']);
+ else if(tab==='players')content=editList('Jogadores e personagens',players,setPlayers,['Jogador','Personagem / classe']);
+ else if(tab==='npcs')content=editList('NPCs',npcs,setNpcs,['Nome','Função','Descrição']);
+ else if(tab==='places')content=editList('Locais',places,setPlaces,['Nome','Descrição']);
+ else if(tab==='combat')content=div({className:'stack'},h(Initiative,{campaignId:c.id}),sect({className:'panel'},h2(null,'Dados'),h(DiceRoller)));
+ else if(tab==='plot')content=div({className:'stack'},sect({className:'panel'},h2(null,'Preparação da sessão'),tasks.map(([id,t])=>lab({key:id,className:'todo'},inp({type:'checkbox',checked:!!done[id],onChange:e=>setDone({...done,[id]:e.target.checked})}),span(null,t)))),h(Notas,{storeKey:'forja-plot-'+c.id,title:'Roteiro',hint:'Planeje as cenas e acontecimentos.',placeholder:'Escreva o roteiro...'}));
+ else if(tab==='notes')content=h(Notas,{storeKey:c.id==='valdoran'?'forja-notas-mestre':'forja-notas-'+c.id,title:'Anotações',hint:'Notas privadas neste navegador.',placeholder:'Escreva suas notas...'});
+ else content=sect({className:'panel'},h2(null,'Configurações'),[['title','Nome da campanha'],['blurb','Descrição'],['next','Próxima sessão']].map(([k,l])=>lab({key:k,className:'field',style:{marginBottom:12}},span({className:'lbl'},l),inp({value:settings[k],onChange:e=>setSettings({...settings,[k]:e.target.value})}))),para({className:'hint'},'Alterações salvas neste painel local.'));
+ return div({className:'gm-shell'},div({className:'gm-top'},lnk({className:'brand',href:'#mestre'},h(D20Icon,{size:24}),'Forja de Fichas'),lnk({className:'btn small',href:'#mestre'},'← Painel do mestre')),h('aside',{className:'gm-side'},span({className:'lbl'},'Campanha'),GM_TABS.map(([k,ic,l])=>btn({key:k,'aria-current':tab===k?'page':undefined,onClick:()=>setTab(k)},ic+'  '+l))),h('main',{className:'gm-content'},content));
+}
+
+/* ---------- área dos jogadores ---------- */
+const MY_CAMPS=[['ravenna','Dra. Prado'],['caravana','Bruna Garra']];
+function PlayerDashboard({campaign:c}){
+ const ordem=c.system.includes('Ordem');
+ const attrs=ordem?['AGI','FOR','INT','PRE','VIG']:['FOR','DES','CON','INT','SAB','CAR'];
+ const skills=ordem?[['Acrobacia','AGI'],['Atletismo','FOR'],['Fortitude','VIG'],['Iniciativa','AGI'],['Investigação','INT'],['Luta','FOR'],['Medicina','INT'],['Ocultismo','INT'],['Percepção','PRE'],['Pontaria','AGI'],['Reflexos','AGI'],['Vontade','PRE']]:[['Acrobacia','DES'],['Atletismo','FOR'],['Fortitude','CON'],['Iniciativa','DES'],['Luta','FOR'],['Misticismo','INT'],['Percepção','SAB'],['Pontaria','DES'],['Reflexos','DES'],['Vontade','SAB']];
+ const [tab,setTab]=useState('sheet'),[detail,setDetail]=useState('combat'),[rolls,setRolls]=useState([]);
+ const [s,setS]=useLS('forja-player-sheet-'+c.id,{name:MY_CAMPS.find(x=>x[0]===c.id)?.[1]||'Personagem',cls:ordem?'Ocultista':'Guerreira',origin:'',level:c.level,attrs:Object.fromEntries(attrs.map(a=>[a,ordem?1:0])),skills:{},resources:ordem?[['Vida',24,24],['Sanidade',30,30],['PE',12,12]]:[['Vida',40,40],['PM',12,12]],defense:10,attacks:[['Ataque básico','1d6+2']],abilities:'',inventory:'',description:'',portrait:''});
+ const patch=(k,v)=>setS(old=>({...old,[k]:v}));
+ const field=(label,k)=>lab({className:'field'},span({className:'lbl'},label),inp({value:s[k],onChange:e=>patch(k,e.target.value)}));
+ const roll=(label,n=1,faces=20,bonus=0,highest=false)=>{const dice=Array.from({length:Math.min(100,Math.max(1,n))},()=>1+Math.floor(Math.random()*faces));setRolls(old=>[{label,text:dice.join(', ')+' → '+((highest?Math.max(...dice):dice.reduce((a,b)=>a+b,0))+bonus)},...old].slice(0,10));};
+ const skillRoll=(name,a)=>roll(name,ordem?Math.max(1,Number(s.attrs[a])||0):1,20,(ordem?0:Number(s.attrs[a])||0)+(Number(s.skills[name])||0),ordem);
+ const panel=(title,...children)=>sect({className:'panel player-panel'},h2(null,title),...children);
+ const textField=(k)=>area({value:s[k],onChange:e=>patch(k,e.target.value),placeholder:'Escreva aqui...',style:{minHeight:'180px'}});
+ let content;
+ if(tab==='sheet')content=div({className:'player-sheet'},div({className:'player-identity panel'},div({className:'player-portrait'},s.portrait?h('img',{src:s.portrait,alt:'Retrato do personagem'}):span(null,s.name[0]||'?'),lab({className:'btn small'},'Foto',inp({type:'file',accept:'image/*',style:{display:'none'},onChange:e=>{const f=e.target.files[0];if(!f||f.size>1000000)return;const r=new FileReader();r.onload=()=>patch('portrait',r.result);r.readAsDataURL(f);}}))),field('Personagem','name'),field('Classe','cls'),field('Origem','origin'),field('Nível / progressão','level')),
+ div({className:'player-columns'},div({className:'stack'},panel('Atributos',div({className:'player-attrs'},attrs.map(a=>div({key:a,className:'player-attr'},span({className:'lbl'},a),inp({type:'number','aria-label':a,value:s.attrs[a],onChange:e=>patch('attrs',{...s.attrs,[a]:Number(e.target.value)})}),btn({className:'btn small',onClick:()=>skillRoll(a,a)},'Rolar'))))),panel('Recursos',s.resources.map(([name,value,max],i)=>div({key:name,className:'player-resource'},div({className:'inline'},b2(name),span({className:'hint'},value+' / '+max)),div({className:'player-meter'},div({style:{width:Math.max(0,Math.min(100,value/Math.max(1,max)*100))+'%',background:i===0?'#d65d60':i===1?'#44a6c9':'#c7a65c'}})),div({className:'inline'},btn({className:'btn small',onClick:()=>patch('resources',s.resources.map((r,j)=>j===i?[name,Math.max(0,value-1),max]:r))},'−'),btn({className:'btn small',onClick:()=>patch('resources',s.resources.map((r,j)=>j===i?[name,Math.min(max,value+1),max]:r))},'+'),lab({className:'field grow'},span({className:'lbl'},'Máximo'),inp({type:'number',min:1,value:max,onChange:e=>{const m=Math.max(1,Number(e.target.value));patch('resources',s.resources.map((r,j)=>j===i?[name,Math.min(value,m),m]:r));}}))))),field('Defesa','defense'))),panel('Perícias',div({className:'player-skill hint'},span(null,'Perícia'),span(null,'Atr.'),span(null,'Bônus'),span(null,'Dado')),skills.map(([name,a])=>div({key:name,className:'player-skill'},span(null,name),span({className:'hint'},a),inp({type:'number','aria-label':'Bônus de '+name,value:s.skills[name]||0,onChange:e=>patch('skills',{...s.skills,[name]:Number(e.target.value)})}),btn({className:'btn small',title:'Rolar '+name,onClick:()=>skillRoll(name,a)},h(D20Icon,{size:18}))))),div({className:'stack'},panel('Ações do personagem',div({className:'player-tabs'},[['combat','Combate'],['abilities','Habilidades'],['inventory','Inventário'],['description','Descrição']].map(([k,l])=>btn({className:'btn small'+(detail===k?' primary':''),onClick:()=>setDetail(k)},l))),detail==='combat'?div(null,s.attacks.map(([name,formula],i)=>div({className:'npc',key:i},inp({value:name,'aria-label':'Nome do ataque',onChange:e=>patch('attacks',s.attacks.map((r,j)=>i===j?[e.target.value,r[1]]:r))}),div({className:'inline'},inp({value:formula,'aria-label':'Dano',onChange:e=>patch('attacks',s.attacks.map((r,j)=>i===j?[r[0],e.target.value]:r))}),btn({className:'btn small primary',onClick:()=>{const m=formula.match(/^\s*(\d*)d(\d+)\s*([+-]\s*\d+)?\s*$/i);if(m&&+m[2]>0)roll(name,+m[1]||1,+m[2],Number((m[3]||'0').replace(/\s/g,'')));else setRolls(old=>[{label:name,text:'Use uma fórmula como 1d6+2'},...old].slice(0,10));}},'Dano'),btn({className:'btn small',onClick:()=>patch('attacks',s.attacks.filter((_,j)=>i!==j))},'×')))),btn({className:'btn',onClick:()=>patch('attacks',[...s.attacks,['Novo ataque','1d6']])},'+ Ataque')):textField(detail)),panel('Histórico de rolagens',rolls.length?rolls.map((r,i)=>div({className:'crow',key:i},span({className:'grow'},r.label),b2(r.text))):para({className:'hint'},'Role um atributo, perícia ou dano.')))));
+ else if(tab==='overview')content=div({className:'stack'},div({className:'gm-banner'},span({className:'sys'},c.system),h2(null,c.title),para(null,c.blurb)),panel('Próxima sessão',b2(c.next),para(null,'Mestre: '+c.gm)),btn({className:'btn primary',onClick:()=>setTab('sheet')},'Abrir minha ficha'));
+ else if(tab==='sessions')content=panel('Sessões',c.sessions.map(([n,d],i)=>div({className:'npc',key:i},b2(n),para(null,d))));
+ else if(tab==='party')content=panel('Grupo',c.cast.map(([p,ch],i)=>div({className:'gm-person',key:i},span({className:'gm-avatar'},ch[0]),div(null,b2(ch),div({className:'hint'},p)))));
+ else if(tab==='dice')content=panel('Rolador de dados',h(DiceRoller));
+ else content=h(Notas,{storeKey:'forja-player-notes-'+c.id,title:'Diário do personagem',hint:'Anotações locais da campanha.',placeholder:'Escreva suas anotações...'});
+ return div({className:'gm-shell player-shell'},div({className:'gm-top'},lnk({className:'brand',href:'#jogadores'},h(D20Icon,{size:24}),'Forja de Fichas'),lnk({className:'btn small',href:'#jogadores'},'← Área dos jogadores')),h('aside',{className:'gm-side'},span({className:'lbl'},c.title),[['sheet','▤','Minha ficha'],['overview','▦','Visão geral'],['sessions','▣','Sessões'],['party','♙','Grupo'],['notes','▧','Diário'],['dice','◇','Dados']].map(([k,ic,l])=>btn({key:k,'aria-current':tab===k?'page':undefined,onClick:()=>setTab(k)},ic+'  '+l))),h('main',{className:'gm-content'},content));
+}
+/* ---------- fichas ---------- */
+function FichasPage({sheets,onCreate,onDup,onDel,onImport}){
+  return div(null,
+    h(PageHead,{eyebrow:'Fichas',title:'Crie e guarde suas fichas',lead:'Escolha um modelo pronto, ajuste os campos do seu jeito ou monte uma ficha do zero. Tudo fica salvo neste navegador.'}),
+    sect(null,h2(null,'Modelos'),
+      para({className:'hint',style:{margin:'.3rem 0 0'}},'Depois de criar, o modo Montar permite renomear, remover e adicionar campos em qualquer modelo.'),
+      div({className:'tpl-grid'},TEMPLATES.map(t=>h(TplCard,{key:t.key,t,onCreate})))),
+    sect({className:'saved'},h2(null,'Suas fichas'),
+      sheets.length===0
+        ?div({className:'empty'},'Nenhuma ficha ainda. Escolha um modelo acima e a primeira ficha aparece aqui.')
+        :div({style:{marginTop:'10px'}},sheets.map(s=>div({key:s.id,className:'row'},
+            div({className:'grow'},div(null,span({style:{fontWeight:600}},s.name||'Sem nome')),sm({className:'hint'},(s.system||'Ficha')+' · editada em '+new Date(s.updated||Date.now()).toLocaleDateString('pt-BR'))),
+            lnk({className:'btn small primary',href:'#ficha-'+s.id},'Abrir'),
+            btn({type:'button',className:'btn small',onClick:()=>onDup(s.id)},'Duplicar'),
+            h(Confirm,{label:'Excluir',onYes:()=>onDel(s.id)}))))),
+    h(Backup,{sheets,onImport}));
+}
+
+/* ---------- landing ---------- */
+function Landing({campaigns=CAMPAIGNS}){
+  return div(null,
+    div({className:'land'},
+      div(null,
+        span({className:'sys'},'RPG de mesa'),
+        h1(null,'Sua mesa de RPG num lugar só.'),
+        para({className:'lead'},'Fichas de D&D, Ordem Paranormal e Tormenta20, campanhas organizadas e ferramentas para quem mestra e para quem joga.'),
+        div({className:'cta'},lnk({className:'btn primary',href:'#fichas'},'Criar uma ficha'),lnk({className:'btn',href:'#campanhas'},'Ver campanhas'))),
+      h(DiceRoller,{compact:true})),
+    sect({className:'band'},h2(null,'Uma área para cada lado da mesa'),
+      div({className:'sides'},
+        div({className:'side'},span({className:'sys'},'Para quem mestra'),h3(null,'Área do mestre'),
+          ul(null,li(null,'Ordem de iniciativa com turnos e PV'),li(null,'Roteiro da próxima sessão'),li(null,'NPCs e notas à mão'),li(null,'Rolador de dados')),
+          div({className:'inline-links'},lnk({className:'btn primary',href:'#mestre'},'Abrir área do mestre'))),
+        div({className:'side'},span({className:'sys'},'Para quem joga'),h3(null,'Área dos jogadores'),
+          ul(null,li(null,'Suas fichas salvas'),li(null,'Campanhas em que você joga'),li(null,'Diário do personagem'),li(null,'Rolador de dados')),
+          div({className:'inline-links'},lnk({className:'btn primary',href:'#jogadores'},'Abrir área dos jogadores'))))),
+    sect({className:'band'},h2(null,'Sistemas com ficha pronta'),
+      div({className:'sys-grid'},TEMPLATES.map(t=>div({key:t.key,className:'sys-card'},span({className:'sys'},t.system),h3(null,t.title),para(null,t.facts[0])))),
+      div({className:'inline-links'},lnk({className:'btn',href:'#fichas'},'Ver todos os modelos'))),
+    sect({className:'band'},h2(null,'Suas campanhas'),
+      para({className:'hint',style:{margin:'.3rem 0 0'}},'Suas mesas como mestre ou jogador (exemplos).' ),
+      div({className:'camp-grid'},campaigns.slice(0,3).map(c=>h(CampaignCard,{key:c.id,c}))),
+      div({className:'inline-links'},lnk({className:'btn',href:'#campanhas'},'Ver todas as campanhas'))),
+    sect({className:'band'},h2(null,'Como funciona'),
+      div({className:'steps'},
+        div({className:'step'},span({className:'n'},'1'),h3(null,'Escolha o modelo'),para(null,'D&D 5e, Ordem Paranormal, Tormenta20 ou uma ficha em branco.')),
+        div({className:'step'},span({className:'n'},'2'),h3(null,'Ajuste do seu jeito'),para(null,'Renomeie campos, acrescente seções e escreva fórmulas simples no modo Montar.')),
+        div({className:'step'},span({className:'n'},'3'),h3(null,'Jogue'),para(null,'Os cálculos acompanham a sessão e a ficha fica salva no navegador.')))),
+    sect({className:'closing'},h2(null,'Pronto para a próxima sessão?'),
+      para({className:'lead',style:{margin:0}},'Abra um modelo, preencha o personagem e role o primeiro dado.'),
+      div({className:'cta'},lnk({className:'btn primary',href:'#fichas'},'Criar uma ficha'))));
+}
+const Footer=()=>h('footer',{className:'foot-site'},'Forja de Fichas. Projeto de exemplo para mesas de RPG. As campanhas e os dados de mestre e jogadores exibidos aqui são fictícios.');
+
+/* ---------- app ---------- */
+function App(){
+  const route=useRoute();
+  const [created,setCreated]=useLS('forja-created-campaigns-v1',[]);
+  const readLocal=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))??fallback;}catch(e){return fallback;}};
+  const allCampaigns=[...created,...CAMPAIGNS].map(c=>({...c,...readLocal('forja-settings-'+c.id,{}),cast:readLocal('forja-players-'+c.id,c.cast),sessions:readLocal('forja-sessions-'+c.id,c.sessions)}));
+  const ownCampaigns=allCampaigns.map(c=>({...c,myRole:c.owned||GM_CAMPS.some(g=>g.id===c.id)?'master':MY_CAMPS.some(([id])=>id===c.id)?'player':null})).filter(c=>c.myRole);
+  const masterCampaigns=ownCampaigns.filter(c=>c.myRole==='master');
+  const playerCampaigns=ownCampaigns.filter(c=>c.myRole==='player');
+  const [store,setStore]=useState(loadStore);
+  const [openMode,setOpenMode]=useState('fill');
+  const [saveState,setSaveState]=useState('ok');
+  useEffect(()=>{
+    const t=setTimeout(()=>{try{localStorage.setItem(STORE_KEY,JSON.stringify(store));setSaveState('ok');}catch(e){setSaveState('fail');}},300);
+    return ()=>clearTimeout(t);
+  },[store]);
+  const update=(id,fn)=>setStore(s=>({...s,sheets:s.sheets.map(x=>x.id===id?fn(x):x)}));
+  const create=(t)=>{
+    const sections=t.build();
+    const sheet={id:uid(),name:t.defaultName,tpl:t.key,system:t.system,sections,data:initData(sections),updated:Date.now()};
+    setStore(s=>({...s,sheets:[sheet,...s.sheets]}));
+    setOpenMode(t.key==='blank'?'build':'fill');
+    go('ficha-'+sheet.id);
+  };
+  const dup=(id)=>setStore(s=>{
+    const src=s.sheets.find(x=>x.id===id);if(!src)return s;
+    const copy=JSON.parse(JSON.stringify(src));copy.id=uid();copy.name=(src.name||'Ficha')+' (cópia)';copy.updated=Date.now();
+    return {...s,sheets:[copy,...s.sheets]};
+  });
+  const del=(id)=>setStore(s=>({...s,sheets:s.sheets.filter(x=>x.id!==id)}));
+  const imp=(list)=>setStore(s=>({...s,sheets:[...list,...s.sheets]}));
+  const fichas=()=>h(FichasPage,{sheets:store.sheets,onCreate:create,onDup:dup,onDel:del,onImport:imp});
+  let page;
+  if(route.startsWith('ficha-')){
+    const sheet=store.sheets.find(x=>x.id===route.slice(6));
+    page=sheet?h(SheetView,{key:sheet.id,sheet,update,onBack:()=>go('fichas'),initialMode:openMode,saveState}):fichas();
+  }else if(route.startsWith('campanha-')){page=h(CampaignDetail,{id:route.slice(9),campaigns:ownCampaigns});}
+  else if(route==='campanhas')page=h(CampaignsPage,{campaigns:ownCampaigns,onCreate:c=>setCreated(old=>[c,...old])});
+  else if(route.startsWith('mestre-')){const c=masterCampaigns.find(x=>x.id===route.slice(7));page=c?h(MasterDashboard,{key:c.id,campaign:c}):h(MestrePage,{campaigns:masterCampaigns});}
+  else if(route==='mestre')page=h(MestrePage,{campaigns:masterCampaigns});
+  else if(route.startsWith('jogador-')){const c=playerCampaigns.find(x=>x.id===route.slice(8));page=c?h(PlayerDashboard,{key:c.id,campaign:c}):h(MestrePage,{player:true,campaigns:playerCampaigns});}
+  else if(route==='jogadores')page=h(MestrePage,{player:true,campaigns:playerCampaigns});
+  else if(route==='fichas')page=fichas();
+  else page=h(Landing,{campaigns:ownCampaigns});
+  return div({className:'site-shell'},
+    (route.startsWith('mestre-')||route.startsWith('jogador-'))?null:h(Nav,{route}),
+    saveState==='fail'?div({className:'warn',role:'alert'},'Este navegador não deixou salvar. Use o Backup das fichas, na página Fichas, para guardar uma cópia.'):null,
+    div({className:'site-main'},page),
+    h(Footer));
+}
+ReactDOM.createRoot(document.getElementById('root')).render(h(App));
+</script>
+
+</body></html>

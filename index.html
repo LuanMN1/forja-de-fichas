@@ -1,4 +1,179 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><style>.player-identity{display:grid;grid-template-columns:72px repeat(4,minmax(0,1fr));gap:12px;align-items:center;margin-bottom:14px}.player-portrait{display:grid;justify-items:center;gap:4px}.player-portrait img,.player-portrait>span{width:60px;height:60px;object-fit:cover;border-radius:10px;background:var(--line);display:grid;place-items:center;font-size:28px}.player-columns{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.25fr);gap:12px;align-items:start}.player-panel{min-width:0;padding:12px}.player-attrs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.player-attr{border:1px solid var(--line);border-radius:8px;padding:8px;display:grid;gap:5px;text-align:center}.player-attr input{text-align:center}.player-resource{margin-bottom:14px}.player-meter{height:9px;background:var(--line);border-radius:8px;overflow:hidden;margin:8px 0}.player-meter>div{height:100%}.player-skill{display:grid;grid-template-columns:minmax(0,1fr) 28px 48px 30px;gap:4px;align-items:center;padding:5px 0;border-bottom:1px solid var(--line);font-size:12px}.player-skill input{padding:4px;width:100%;min-width:0}.player-skill button{padding:4px}.player-tabs{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}.player-panel .npc input{min-width:0;width:100%}.player-panel .npc .inline input{flex:1}.player-shell .gm-content{min-width:0}@media(max-width:1050px){.player-columns{grid-template-columns:1fr 1fr}.player-columns>div:last-child{grid-column:1/-1}.player-identity{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:650px){.player-columns{grid-template-columns:1fr}.player-identity{grid-template-columns:1fr}}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+/* Painel de sessões: organização e acompanhamento do mestre */
+.sm-board{display:grid;gap:18px;min-width:0}
+.sm-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.sm-head h2{font-size:1.65rem;margin:4px 0 6px}
+.sm-head p{color:var(--muted);margin:0;font-size:.9rem}
+.sm-kicker{font:700 .72rem var(--font-mono);color:var(--accent);letter-spacing:.1em;text-transform:uppercase}
+.sm-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.sm-stat{border:1px solid var(--line);background:var(--bg);border-radius:11px;padding:15px;min-width:0}
+.sm-stat strong{display:block;font:700 1.5rem var(--font-display);margin-bottom:2px}
+.sm-stat span{font-size:.8rem;color:var(--muted)}
+.sm-toolbar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.sm-toolbar>div{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sm-toolbar select{width:176px}.sm-search{max-width:270px}
+.sm-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.sm-card{min-width:0;display:flex;flex-direction:column;gap:12px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:18px;transition:border-color .15s,transform .15s}
+.sm-card:hover{border-color:var(--accent);transform:translateY(-1px)}
+.sm-card-top{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.sm-number{font:700 .76rem var(--font-mono);color:var(--accent)}
+.sm-badge{font-size:.72rem;font-weight:700;border-radius:999px;padding:3px 9px;border:1px solid var(--line);background:var(--surface-2);white-space:nowrap}
+.sm-badge.done{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+.sm-badge.active{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.sm-card h3{font-size:1.1rem;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sm-desc{font-size:.86rem;color:var(--muted);line-height:1.5;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;min-height:2.6em;margin:0}
+.sm-metadata{display:flex;gap:8px 14px;flex-wrap:wrap;color:var(--muted);font-size:.76rem}
+.sm-prog{height:7px;background:var(--surface-2);border-radius:20px;overflow:hidden;border:1px solid var(--line)}
+.sm-prog>span{display:block;height:100%;background:var(--accent);border-radius:20px}
+.sm-card-bottom{display:flex;align-items:center;gap:8px;margin-top:auto}
+.sm-card-bottom .btn.primary{flex:1}
+.sm-section{border:1px solid var(--line);border-radius:12px;background:var(--bg);padding:18px;min-width:0}
+.sm-section h3{font-size:1rem;margin:0 0 14px}
+.sm-detail-columns{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:14px;align-items:start}
+.sm-stack{display:grid;gap:14px;min-width:0}
+.sm-field{display:grid;gap:5px;margin-bottom:12px;min-width:0}
+.sm-field:last-child{margin-bottom:0}
+.sm-field>span{font-size:.72rem;text-transform:uppercase;font-weight:600;letter-spacing:.035em;color:var(--muted)}
+.sm-field textarea{min-height:92px}
+/* Datas da sessão: rótulos e controles nivelados nas duas colunas. */
+.sm-fields-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start;margin-bottom:12px}
+.sm-fields-2>.sm-field{display:flex;flex-direction:column;gap:6px;min-width:0;margin:0;align-self:start}
+.sm-fields-2>.sm-field>span{display:block;min-height:18px;line-height:18px;margin:0}
+.sm-fields-2>.sm-field>input{display:block;width:100%;height:42px;min-height:42px;min-width:0;margin:0;padding:8px 11px;line-height:24px;box-sizing:border-box}
+.sm-fields-2 input[type=date],.sm-fields-2 input[type=time]{color-scheme:inherit}
+.sm-fields-2 input::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.8}
+.sm-section>.sm-field input,.sm-section>.sm-field select{min-height:40px}
+.sm-section>.sm-field textarea{line-height:1.5}
+.sm-detail-columns .sm-stack>.sm-section{display:block}
+
+.sm-check{display:flex;gap:9px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
+.sm-check:last-of-type{border-bottom:0}.sm-check input[type=checkbox]{flex:none}
+.sm-check>span{flex:1;min-width:0;overflow-wrap:anywhere}
+.sm-scene{border:1px solid var(--line);border-radius:8px;padding:11px;margin-bottom:9px;display:grid;gap:8px}
+.sm-scene-head{display:flex;align-items:center;gap:9px}.sm-scene-head .sm-field{flex:1;margin:0}
+.sm-addline{display:flex;gap:8px;margin-top:10px;align-items:center}.sm-addline input{flex:1}
+.sm-empty{border:1px dashed var(--line);padding:40px 20px;border-radius:12px;text-align:center;color:var(--muted)}
+.sm-actions{display:flex;gap:8px;flex-wrap:wrap}
+.sm-actions .btn{white-space:nowrap}
+.sm-divider{border:0;border-top:1px solid var(--line);margin:10px 0}
+@media(max-width:900px){.sm-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.sm-detail-columns{grid-template-columns:1fr}}
+@media(max-width:680px){.sm-cards{grid-template-columns:1fr}.sm-fields-2{grid-template-columns:1fr}.sm-toolbar select,.sm-search{width:100%;max-width:none}.sm-toolbar>div{width:100%}}
+
+
+
+/* Cenas: resumo compacto na sessão e gerenciador dedicado em sobreposição */
+.sm-scenes-preview{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:12px}
+.sm-scenes-summary{display:flex;align-items:center;gap:10px;min-width:0}
+.sm-scenes-icon{display:grid;place-items:center;width:42px;height:42px;flex:none;border:1px solid var(--line);border-radius:10px;background:var(--accent-soft);color:var(--accent);font-size:1.2rem}
+.sm-scenes-summary strong{display:block;font-size:.94rem}.sm-scenes-summary .hint{display:block;font-size:.78rem}
+.sm-scene-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.sm-scene-chip{padding:5px 9px;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.76rem;color:var(--muted)}
+.sm-scene-overlay{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(3,10,8,.78);backdrop-filter:blur(5px)}
+.sm-scene-dialog{display:flex;flex-direction:column;width:min(900px,100%);max-height:min(790px,90dvh);min-height:min(540px,80dvh);background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 22px 80px #0006;overflow:hidden}
+.sm-scene-dialog-head{display:flex;align-items:center;gap:14px;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--line)}
+.sm-scene-dialog-head h2{font-size:1.3rem;margin:4px 0 0}.sm-scene-dialog-head .hint{font-size:.8rem}
+.sm-scene-dialog-body{display:grid;grid-template-columns:minmax(210px,32%) minmax(0,1fr);flex:1;min-height:0}
+.sm-scene-nav{min-height:0;overflow:auto;display:flex;flex-direction:column;gap:7px;padding:15px;border-right:1px solid var(--line);background:var(--bg)}
+.sm-scene-nav-item{border:1px solid transparent;border-radius:9px;background:transparent;color:var(--ink);padding:12px;text-align:left;display:flex;align-items:center;gap:9px;min-width:0}
+.sm-scene-nav-item:hover{border-color:var(--line);background:var(--surface-2)}.sm-scene-nav-item.active{background:var(--accent-soft);border-color:var(--accent)}
+.sm-scene-nav-item .sm-scene-index{font:.75rem var(--font-mono);color:var(--accent);flex:none}.sm-scene-nav-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;font-size:.88rem}
+.sm-scene-nav-add{display:grid;gap:8px;margin-top:auto;padding-top:15px}.sm-scene-nav-add input{min-width:0}
+.sm-scene-editor{min-height:0;overflow:auto;padding:22px;display:flex;flex-direction:column;gap:17px}
+.sm-scene-editor-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.sm-scene-editor-top .sm-number{margin-right:auto}
+.sm-scene-editor .sm-field{margin:0}.sm-scene-editor .sm-field textarea{min-height:160px}
+.sm-scene-editor-note{border:1px dashed var(--line);border-radius:9px;padding:12px;color:var(--muted);font-size:.8rem}
+.sm-scene-dialog-footer{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:12px 20px;border-top:1px solid var(--line);background:var(--surface-2)}
+@media(max-width:650px){.sm-scene-overlay{padding:8px}.sm-scene-dialog{max-height:95dvh;min-height:75dvh}.sm-scene-dialog-body{grid-template-columns:1fr;grid-template-rows:minmax(130px,auto) minmax(0,1fr)}.sm-scene-nav{max-height:205px;border-right:0;border-bottom:1px solid var(--line)}.sm-scene-editor{padding:15px}.sm-scene-dialog-head{padding:12px 15px}.sm-scene-dialog-footer{padding:10px 15px}}
+
+/* Paginação do planejamento de sessões */
+.sm-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 0 4px;margin-top:2px;border-top:1px solid var(--line)}
+.sm-pagination .inline{display:flex;gap:5px;align-items:center}
+.sm-pagination .btn[aria-current=page]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+@media(max-width:680px){.sm-pagination{justify-content:center}.sm-pagination>.hint{width:100%;text-align:center}}
+
+/* Painel do mestre: estrutura fixa; apenas o conteúdo da aba rola. */
+@media (min-width: 651px) {
+  body:has(.gm-shell:not(.player-shell)) {
+    height: 100dvh;
+    overflow: hidden;
+  }
+  body:has(.gm-shell:not(.player-shell)) #root,
+  body:has(.gm-shell:not(.player-shell)) .site-shell {
+    height: 100%;
+    min-height: 0;
+  }
+  body:has(.gm-shell:not(.player-shell)) .site-main {
+    flex: 1 1 auto;
+    display: flex;
+    min-height: 0;
+    padding-bottom: 12px;
+  }
+  body:has(.gm-shell:not(.player-shell)) .foot-site {
+    margin-top: 0;
+    flex-shrink: 0;
+  }
+  .gm-shell:not(.player-shell) {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    grid-template-rows: auto minmax(0, 1fr);
+    overflow: hidden;
+  }
+  .gm-shell:not(.player-shell) .gm-side {
+    min-height: 0;
+    overflow: hidden;
+  }
+  .gm-shell:not(.player-shell) .gm-content {
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    padding-right: 5px;
+    align-content: start;
+  }
+}
+@media (max-width: 650px) {
+  /* No celular, mantém a estrutura acessível sem cortar o menu. */
+  .gm-shell:not(.player-shell) .gm-content { min-width: 0; }
+}
+
+/* Elenco compacto e ficha detalhada no painel do mestre */
+.cast-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.cast-mini-card{display:grid;grid-template-columns:90px minmax(0,1fr);gap:14px;align-items:center;min-width:0;padding:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;transition:border-color .15s,transform .15s}
+.cast-mini-card:hover{border-color:var(--accent);transform:translateY(-1px)}
+.cast-portrait{display:grid;place-items:center;width:90px;height:112px;overflow:hidden;border-radius:9px;background:linear-gradient(135deg,var(--accent-soft),var(--surface-2));border:1px solid var(--line);font:700 1.75rem var(--font-display);color:var(--accent)}
+.cast-portrait img{width:100%;height:100%;object-fit:cover}.cast-portrait.large{width:74px;height:74px;flex-shrink:0;font-size:1.4rem}
+.cast-mini-info{display:grid;gap:3px;min-width:0}.cast-mini-info h3,.cast-mini-info .hint,.cast-class{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.cast-mini-info h3{font-size:1rem}.cast-mini-info .btn{justify-self:start;margin-top:8px}.cast-class{color:var(--muted);font-size:.8rem}
+.cast-overlay{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.76);display:grid;place-items:center;padding:20px;backdrop-filter:blur(5px)}
+.cast-dialog{display:flex;flex-direction:column;width:min(100%,1020px);max-height:min(92dvh,900px);min-height:0;border:1px solid var(--line);border-radius:16px;background:var(--surface);box-shadow:0 25px 90px rgba(0,0,0,.5);overflow:hidden}
+.cast-dialog-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:18px 22px;border-bottom:1px solid var(--line)}.cast-dialog-identity{display:flex;align-items:center;gap:14px;min-width:0}.cast-dialog-identity h2{margin:5px 0;font-size:1.35rem}
+.cast-dialog-content{overflow-y:auto;min-height:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;padding:20px 22px;align-items:start}
+.cast-dialog-col{display:grid;gap:16px;min-width:0}.cast-edit-section{display:grid;gap:11px;padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--bg);min-width:0}.cast-edit-section h3{font-size:1rem;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.cast-inline,.cast-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.cast-edit-section textarea{min-height:88px}.cast-dialog-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 22px;border-top:1px solid var(--line)}
+@media(max-width:820px){.cast-card-grid{grid-template-columns:1fr}}@media(max-width:650px){.cast-dialog-content{grid-template-columns:1fr}.cast-overlay{padding:8px}.cast-dialog-head,.cast-dialog-content,.cast-dialog-footer{padding:12px}.cast-dialog-footer{flex-wrap:wrap}.cast-mini-card{grid-template-columns:78px minmax(0,1fr)}.cast-mini-card .cast-portrait{width:78px;height:100px}}
+
+/* Cards compactos do elenco: grade uniforme, com foco no personagem. */
+.cast-card-grid{gap:10px;align-items:stretch}
+.cast-mini-card{grid-template-columns:72px minmax(0,1fr);gap:12px;padding:10px;min-height:116px;
+  border-radius:12px;position:relative;box-shadow:0 3px 12px rgba(0,0,0,.08);
+  background:linear-gradient(115deg,var(--accent-soft) -110%,var(--surface) 42%);
+  transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease}
+.cast-mini-card:hover{border-color:var(--accent);box-shadow:0 6px 22px rgba(0,0,0,.16);transform:translateY(-2px)}
+.cast-mini-card .cast-portrait{width:72px;height:92px;border-radius:8px;font-size:1.45rem;
+  border-color:var(--line);background:linear-gradient(145deg,var(--accent-soft),var(--surface-2))}
+.cast-mini-info{display:flex;flex-direction:column;align-items:stretch;gap:2px;min-width:0}
+.cast-mini-info h3{font-size:1rem;letter-spacing:-.012em;line-height:1.25;margin:0}
+.cast-mini-info>.hint{font-size:.79rem}
+.cast-mini-info .cast-class{font-size:.75rem;color:var(--accent);font-weight:600}
+.cast-mini-info .cast-open-btn{display:inline-flex;align-items:center;justify-content:center;align-self:flex-start;flex:0 0 auto;min-width:max-content;max-width:100%;white-space:nowrap;line-height:1.2;margin-top:auto;padding:.44rem .85rem;border-radius:7px;
+  background:var(--accent-soft);color:var(--accent);border:1px solid var(--line);font-size:.8rem;font-weight:600;transition:background .15s,color .15s,border-color .15s}
+.cast-mini-info .cast-open-btn:hover{background:var(--accent);color:var(--accent-ink)}
+@media(max-width:820px){.cast-card-grid{grid-template-columns:1fr}}
+@media(max-width:650px){.cast-mini-card{grid-template-columns:72px minmax(0,1fr)}
+.cast-mini-card .cast-portrait{width:72px;height:92px}}
+</style><style>.player-identity{display:grid;grid-template-columns:72px repeat(4,minmax(0,1fr));gap:12px;align-items:center;margin-bottom:14px}.player-portrait{display:grid;justify-items:center;gap:4px}.player-portrait img,.player-portrait>span{width:60px;height:60px;object-fit:cover;border-radius:10px;background:var(--line);display:grid;place-items:center;font-size:28px}.player-columns{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.25fr);gap:12px;align-items:start}.player-panel{min-width:0;padding:12px}.player-attrs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.player-attr{border:1px solid var(--line);border-radius:8px;padding:8px;display:grid;gap:5px;text-align:center}.player-attr input{text-align:center}.player-resource{margin-bottom:14px}.player-meter{height:9px;background:var(--line);border-radius:8px;overflow:hidden;margin:8px 0}.player-meter>div{height:100%}.player-skill{display:grid;grid-template-columns:minmax(0,1fr) 28px 48px 30px;gap:4px;align-items:center;padding:5px 0;border-bottom:1px solid var(--line);font-size:12px}.player-skill input{padding:4px;width:100%;min-width:0}.player-skill button{padding:4px}.player-tabs{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}.player-panel .npc input{min-width:0;width:100%}.player-panel .npc .inline input{flex:1}.player-shell .gm-content{min-width:0}@media(max-width:1050px){.player-columns{grid-template-columns:1fr 1fr}.player-columns>div:last-child{grid-column:1/-1}.player-identity{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:650px){.player-columns{grid-template-columns:1fr}.player-identity{grid-template-columns:1fr}}</style></head><body>
 <title>Forja de Fichas</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
@@ -216,7 +391,7 @@ a.btn.primary{color:var(--accent-ink)}
 @media (max-width:820px){.land{grid-template-columns:1fr;gap:24px}.detail{grid-template-columns:1fr}}
 @media (max-width:480px){.ini-add{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.ini-add input:first-child{grid-column:1/-1}.ini-row{grid-template-columns:2rem minmax(0,1fr) auto}.ini-row .rm{grid-column:3}}
 
-.dice-card{grid-template-columns:minmax(0,1fr) minmax(100px,.65fr);align-items:center;text-align:left;gap:18px}.dice-main{display:grid;justify-items:center;gap:12px}.dice-history{border-left:1px solid var(--line);padding-left:14px;align-self:stretch;display:flex;flex-direction:column;gap:8px}.dice-history .log{gap:6px}.roll-entry{display:flex;justify-content:space-between;align-items:center;background:var(--surface-2);padding:7px 9px;border-radius:6px}.gm-shell{display:grid;grid-template-columns:180px minmax(0,1fr);gap:20px;border:1px solid var(--line);border-radius:14px;padding:16px;background:var(--surface)}.gm-side{display:flex;flex-direction:column;gap:5px}.gm-side button{text-align:left;border:0;background:transparent;padding:10px;border-radius:7px}.gm-side button[aria-current=page]{background:var(--accent-soft);color:var(--accent)}.gm-content{min-width:0;display:grid;gap:12px;align-content:start}.gm-banner{background:var(--accent-soft);border-radius:12px;padding:18px}.gm-banner h2{margin:8px 0}.gm-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.gm-stats b{display:block;font-size:1.5rem;margin-bottom:8px}.gm-progress{height:7px;background:var(--line);border-radius:10px;overflow:hidden;margin:10px 0}.gm-progress div{height:100%;background:var(--accent)}.gm-person{display:flex;gap:10px;align-items:center;padding:8px 0}.gm-people-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px}.gm-people-grid .gm-person{min-width:0;padding:10px;border:1px solid var(--line);border-radius:9px;background:var(--surface)}.gm-people-grid .gm-person .grow{min-width:0;overflow:hidden}.gm-people-grid .gm-person .grow b,.gm-people-grid .gm-person .hint{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.gm-people-grid .gm-person .btn{flex-shrink:0}.gm-people-grid .gm-person .gm-avatar{flex-shrink:0}@media(max-width:780px){.gm-people-grid{grid-template-columns:1fr}}.gm-avatar{background:var(--surface-2);border-radius:8px;padding:8px 12px}.gm-person .grow{flex:1}.gm-top{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:12px}.gm-content .panel{background:var(--bg)}@media(max-width:650px){.gm-shell{grid-template-columns:1fr;padding:10px}.gm-side{flex-direction:row;overflow-x:auto}.gm-side button{white-space:nowrap}.gm-top{grid-column:auto}.dice-card{gap:10px;padding:12px}.dice-face{width:110px;height:110px}}
+.dice-card{grid-template-columns:minmax(0,1fr) minmax(100px,.65fr);align-items:center;text-align:left;gap:18px}.dice-main{display:grid;justify-items:center;gap:12px}.dice-history{border-left:1px solid var(--line);padding-left:14px;align-self:stretch;display:flex;flex-direction:column;gap:8px}.dice-history .log{gap:6px}.roll-entry{display:flex;justify-content:space-between;align-items:center;background:var(--surface-2);padding:7px 9px;border-radius:6px}.gm-shell{display:grid;grid-template-columns:180px minmax(0,1fr);gap:20px;border:1px solid var(--line);border-radius:14px;padding:16px;background:var(--surface)}.gm-side{display:flex;flex-direction:column;gap:5px}.gm-side button{text-align:left;border:0;background:transparent;padding:10px;border-radius:7px}.gm-side button[aria-current=page]{background:var(--accent-soft);color:var(--accent)}.gm-content{min-width:0;display:grid;gap:12px;align-content:start}.gm-banner{background:var(--accent-soft);border-radius:12px;padding:18px}.gm-banner h2{margin:8px 0}.gm-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.gm-stats b{display:block;font-size:1.5rem;margin-bottom:8px}.gm-progress{height:7px;background:var(--line);border-radius:10px;overflow:hidden;margin:10px 0}.gm-progress div{height:100%;background:var(--accent)}.gm-person{display:flex;gap:10px;align-items:center;padding:8px 0}.gm-people-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px}.gm-people-grid .gm-person{min-width:0;padding:10px;border:1px solid var(--line);border-radius:9px;background:var(--surface)}.gm-people-grid .gm-person .grow{min-width:0;overflow:hidden}.gm-people-grid .gm-person .grow b,.gm-people-grid .gm-person .hint{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.gm-people-grid .gm-person .btn{flex-shrink:0}.gm-people-grid .gm-person .gm-avatar{flex-shrink:0}@media(max-width:780px){.gm-people-grid{grid-template-columns:1fr}}.gm-avatar{background:var(--surface-2);border-radius:8px;padding:8px 12px}.gm-person .grow{flex:1}.roster-wrap{display:grid;gap:14px}.roster-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}.roster-head .stack{display:grid;gap:4px}.roster-tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.roster-stats{display:grid;grid-template-columns:repeat(3,minmax(120px,1fr));gap:8px}.roster-stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}.roster-stat b{display:block;font-size:1.25rem;margin-bottom:4px}.roster-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.roster-card{display:grid;grid-template-columns:120px minmax(0,1fr);gap:14px;padding:14px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,color-mix(in oklab,var(--surface) 92%, var(--accent-soft) 8%),var(--surface));box-shadow:0 8px 24px rgba(0,0,0,.12)}.roster-photo{position:relative;display:grid;gap:8px;align-content:start}.roster-thumb{width:120px;height:152px;border-radius:12px;border:1px solid var(--line);background:linear-gradient(180deg,var(--surface-2),var(--surface));overflow:hidden;display:flex;align-items:center;justify-content:center}.roster-thumb img{width:100%;height:100%;object-fit:cover}.roster-initials{font:700 2rem var(--font-display);color:var(--accent)}.roster-photo button,.roster-photo label{width:100%}.roster-meta{min-width:0;display:grid;gap:10px}.roster-title{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.roster-title h3{margin:0;font-size:1.18rem}.roster-sub{display:grid;gap:4px}.roster-sub .hint{margin:0}.roster-badges{display:flex;gap:6px;flex-wrap:wrap}.roster-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.roster-fields .span-2{grid-column:1/-1}.roster-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding-top:6px;border-top:1px solid var(--line)}.roster-empty{padding:18px;border:1px dashed var(--line);border-radius:12px;color:var(--muted);text-align:center;background:var(--surface)}.gm-top{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:12px}.gm-content .panel{background:var(--bg)}@media(max-width:900px){.roster-grid{grid-template-columns:1fr}.roster-card{grid-template-columns:100px minmax(0,1fr)}.roster-thumb{width:100px;height:128px}}@media(max-width:650px){.gm-shell{grid-template-columns:1fr;padding:10px}.gm-side{flex-direction:row;overflow-x:auto}.gm-side button{white-space:nowrap}.gm-top{grid-column:auto}.dice-card{gap:10px;padding:12px}.dice-face{width:110px;height:110px}.roster-head{align-items:stretch}.roster-stats,.roster-fields{grid-template-columns:1fr}.roster-card{grid-template-columns:1fr}.roster-photo{grid-template-columns:100px minmax(0,1fr);align-items:start}.roster-thumb{width:100px;height:124px}.roster-photo .btn{width:auto}}
 
 /* Rodapé ao fundo, sem sobrepor conteúdo */
 body{padding-bottom:20px}
@@ -266,6 +441,23 @@ body{padding-bottom:20px}
 .campaign-role-row{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}.campaign-role-row h3,.campaign-role-row .sys{flex:1;min-width:0}.role-tag{flex-shrink:0;font-size:.72rem;font-weight:600;padding:2px 8px;border-radius:999px;border:1px solid var(--line);white-space:nowrap}.role-tag.master{color:var(--accent);background:var(--accent-soft)}.role-tag.player{color:var(--ink);background:var(--surface-2)}
 
 .campaign-filter-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+/* Barras de rolagem personalizadas — consistentes nos temas claro e escuro. */
+:root { scrollbar-color: var(--line) transparent; scrollbar-width: thin; }
+* { scrollbar-color: var(--line) transparent; scrollbar-width: thin; }
+*::-webkit-scrollbar { width: 9px; height: 9px; }
+*::-webkit-scrollbar-track { background: transparent; border-radius: 999px; }
+*::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border: 2px solid var(--surface);
+  border-radius: 999px;
+  min-height: 28px;
+}
+*::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+*::-webkit-scrollbar-corner { background: transparent; }
+/* Trilho discreto especificamente no conteúdo rolável do painel. */
+.gm-shell .gm-content::-webkit-scrollbar-thumb,
+.scene-modal-body::-webkit-scrollbar-thumb { border-color: var(--surface); }
 </style>
 
 <div id="root"></div>
@@ -1045,6 +1237,172 @@ function MestrePage({campaigns=GM_CAMPS,player=false}){
     btn({type:'button',className:'btn small',disabled:current===pages,onClick:()=>setPage(current+1),'aria-label':'Próxima página'},'›'))));
 }
 const GM_TABS=[['overview','▦','Visão geral'],['sessions','▣','Sessões'],['players','♙','Jogadores'],['npcs','♧','NPCs'],['combat','⚔','Combates'],['plot','▤','Roteiro'],['places','◇','Locais'],['notes','▧','Anotações'],['settings','⚙','Configurações']];
+/* ---------- planejamento de sessões ---------- */
+
+function ScenesManager({scenes,onChange}){
+ const [open,setOpen]=useState(false);
+ const [active,setActive]=useState(null);
+ const [draft,setDraft]=useState('');
+ const current=scenes.find(sc=>sc.id===active)||scenes[0];
+ const patch=(id,changes)=>onChange(scenes.map(sc=>sc.id===id?{...sc,...changes}:sc));
+ const add=()=>{const title=draft.trim()||'Nova cena';const id=uid();onChange([...scenes,{id,title,notes:''}]);setActive(id);setDraft('');setOpen(true);};
+ const remove=(id)=>{onChange(scenes.filter(sc=>sc.id!==id));if(active===id)setActive(scenes.find(sc=>sc.id!==id)?.id||null);};
+ const move=(id,dir)=>{const i=scenes.findIndex(sc=>sc.id===id);const j=i+dir;if(j<0||j>=scenes.length)return;const a=[...scenes];[a[i],a[j]]=[a[j],a[i]];onChange(a);};
+ return sect({className:'sm-section'},
+  h3(null,'Sequência de cenas'),
+  para({className:'hint'},'Planeje a ordem dos acontecimentos sem ocupar espaço na ficha da sessão.'),
+  div({className:'sm-scenes-preview'},
+   div({className:'sm-scenes-summary'},span({className:'sm-scenes-icon','aria-hidden':true},'▤'),div(null,h('strong',null,scenes.length+' '+(scenes.length===1?'cena planejada':'cenas planejadas')),span({className:'hint'},scenes.length?'Selecione uma cena para editar ou reorganizar.':'Comece a montar os acontecimentos desta sessão.'))),
+   btn({type:'button',className:'btn primary',onClick:()=>setOpen(true)},scenes.length?'Gerenciar cenas ↗':'+ Criar primeira cena')),
+  scenes.length?div({className:'sm-scene-chips'},scenes.slice(0,4).map((sc,i)=>span({key:sc.id,className:'sm-scene-chip',title:sc.title},String(i+1).padStart(2,'0')+' · '+sc.title)),scenes.length>4?span({className:'sm-scene-chip'},'+'+(scenes.length-4)+' cenas'):null):null,
+  open?h('div',{className:'sm-scene-overlay',role:'presentation',onMouseDown:e=>{if(e.target===e.currentTarget)setOpen(false);}},
+   h('div',{className:'sm-scene-dialog',role:'dialog','aria-modal':true,'aria-label':'Gerenciar cenas da sessão'},
+    div({className:'sm-scene-dialog-head'},div(null,span({className:'sm-kicker'},'PLANEJAMENTO DA SESSÃO'),h2(null,'Gerenciar cenas'),span({className:'hint'},'Organize os acontecimentos na ordem em que serão apresentados.')),btn({type:'button',className:'btn',onClick:()=>setOpen(false),'aria-label':'Fechar gerenciador de cenas'},'✕ Fechar')),
+    div({className:'sm-scene-dialog-body'},
+     div({className:'sm-scene-nav'},
+      span({className:'lbl'},'ORDEM DAS CENAS'),
+      scenes.map((sc,i)=>btn({key:sc.id,type:'button',className:'sm-scene-nav-item'+(current?.id===sc.id?' active':''),onClick:()=>setActive(sc.id)},span({className:'sm-scene-index'},String(i+1).padStart(2,'0')),span({className:'sm-scene-nav-name',title:sc.title},sc.title||'Cena sem título'))),
+      div({className:'sm-scene-nav-add'},inp({value:draft,placeholder:'Nome da nova cena...',onChange:e=>setDraft(e.target.value),onKeyDown:e=>{if(e.key==='Enter')add();},'aria-label':'Nome da nova cena'}),btn({type:'button',className:'btn primary',onClick:add},'+ Adicionar cena'))),
+     current?div({className:'sm-scene-editor',key:current.id},
+       div({className:'sm-scene-editor-top'},span({className:'sm-number'},'CENA '+String(scenes.findIndex(sc=>sc.id===current.id)+1).padStart(2,'0')),btn({className:'btn small',disabled:scenes[0]?.id===current.id,onClick:()=>move(current.id,-1),title:'Mover cena para cima'},'↑ Subir'),btn({className:'btn small',disabled:scenes[scenes.length-1]?.id===current.id,onClick:()=>move(current.id,1),title:'Mover cena para baixo'},'↓ Descer')),
+       lab({className:'sm-field'},span(null,'TÍTULO DA CENA'),inp({value:current.title||'',onChange:e=>patch(current.id,{title:e.target.value}),placeholder:'Ex.: O encontro na estalagem'})),
+       lab({className:'sm-field'},span(null,'DESCRIÇÃO / ACONTECIMENTOS'),area({value:current.notes||'',onChange:e=>patch(current.id,{notes:e.target.value}),placeholder:'Descreva o cenário, personagens presentes, pistas e possíveis desdobramentos...',rows:7})),
+       div({className:'sm-scene-editor-note'},'As cenas são salvas automaticamente neste navegador. Use as setas para ajustar a ordem de apresentação.'),
+       div(null,h(Confirm,{label:'Excluir esta cena',onYes:()=>remove(current.id)}))
+      ):div({className:'sm-scene-editor'},div({className:'sm-empty'},h3(null,'Nenhuma cena cadastrada'),para(null,'Dê um nome à primeira cena no menu à esquerda e clique em Adicionar cena.')))),
+    div({className:'sm-scene-dialog-footer'},span({className:'hint'},scenes.length+' '+(scenes.length===1?'cena':'cenas')+' na sequência'),btn({className:'btn primary',onClick:()=>setOpen(false)},'Concluir')))) :null);
+}
+
+function SessionsManager({sessions,setSessions,campaignId}){
+ const [details,setDetails]=useLS('forja-session-details-'+campaignId,{});
+ const [selected,setSelected]=useState(null);
+ const [filter,setFilter]=useState('all');
+ const [search,setSearch]=useState('');
+ const [page,setPage]=useState(1);
+ const [newTask,setNewTask]=useState('');
+ const [newScene,setNewScene]=useState('');
+ const normalized=sessions.map((entry,i)=>({id:entry[2]||'legacy-'+i,title:entry[0]||'Sessão sem título',summary:entry[1]||'',i}));
+ const meta=(id)=>details[id]||{};
+ const updateMeta=(id,p)=>setDetails(old=>({...old,[id]:{...(old[id]||{}),...p}}));
+ const patchSession=(id,field,value)=>setSessions(old=>old.map((entry,i)=>{
+   const key=entry[2]||'legacy-'+i;
+   if(key!==id)return entry;
+   const copy=[...entry];copy[field]=value;copy[2]=key;return copy;
+ }));
+ const addSession=()=>{const id='session-'+uid();setSessions(old=>[...old,['Nova sessão','',id]]);setSelected(id);setFilter('all');setSearch('');};
+ const deleteSession=(id)=>{setSessions(old=>old.filter((entry,i)=>(entry[2]||'legacy-'+i)!==id));setDetails(old=>{const d={...old};delete d[id];return d;});setSelected(null);};
+ const duplicateSession=(item)=>{const id='session-'+uid();const m=meta(item.id);setSessions(old=>[...old,[item.title+' (cópia)',item.summary,id]]);setDetails(old=>({...old,[id]:{...m,status:'planned',tasks:(m.tasks||[]).map(t=>({...t,id:uid(),done:false})),scenes:(m.scenes||[]).map(sc=>({...sc,id:uid()}))}}));setSelected(id);};
+ const statuses={planned:'Planejada',active:'Em andamento',done:'Concluída'};
+ const progress=(id)=>{const tasks=meta(id).tasks||[];return tasks.length?Math.round(tasks.filter(t=>t.done).length/tasks.length*100):0;};
+ const counts={planned:0,active:0,done:0};normalized.forEach(x=>counts[meta(x.id).status||'planned']++);
+ const filtered=normalized.filter(item=>(filter==='all'||(meta(item.id).status||'planned')===filter)&&[item.title,item.summary].join(' ').toLowerCase().includes(search.toLowerCase()));
+ const pageSize=4;
+ const totalPages=Math.max(1,Math.ceil(filtered.length/pageSize));
+ const currentPage=Math.min(page,totalPages);
+ const visibleSessions=filtered.slice((currentPage-1)*pageSize,currentPage*pageSize);
+ const field=(label,value,onChange,type='text')=>lab({className:'sm-field'},span(null,label),type==='textarea'?area({value:value||'',onChange:e=>onChange(e.target.value),rows:3}):inp({type,value:value||'',onChange:e=>onChange(e.target.value)}));
+ const stat=(num,label)=>div({className:'sm-stat'},h('strong',null,String(num)),span(null,label));
+ const statusBadge=(status)=>span({className:'sm-badge '+(status==='done'?'done':status==='active'?'active':'')},statuses[status]||statuses.planned);
+ const selectedItem=normalized.find(x=>x.id===selected);
+ if(selectedItem){
+  const item=selectedItem,m=meta(item.id),tasks=m.tasks||[],scenes=m.scenes||[];
+  const addTask=()=>{const v=newTask.trim();if(!v)return;updateMeta(item.id,{tasks:[...tasks,{id:uid(),text:v,done:false}]});setNewTask('');};
+  const addScene=()=>{const v=newScene.trim();if(!v)return;updateMeta(item.id,{scenes:[...scenes,{id:uid(),title:v,notes:''}]});setNewScene('');};
+  return div({className:'sm-board'},
+   div({className:'sm-head'},div(null,span({className:'sm-kicker'},'PLANEJAMENTO / SESSÃO '+(item.i+1)),h2(null,item.title),para(null,'Edite os detalhes e prepare os acontecimentos da sua mesa.')),div({className:'sm-actions'},btn({className:'btn',onClick:()=>setSelected(null)},'← Todas as sessões'),btn({className:'btn',onClick:()=>duplicateSession(item)},'Duplicar'))),
+   div({className:'sm-stats'},stat(item.i+1,'Número da sessão'),stat(tasks.filter(t=>t.done).length+' / '+tasks.length,'Tarefas concluídas'),stat(scenes.length,'Cenas planejadas'),stat(progress(item.id)+'%','Preparação')),
+   div({className:'sm-detail-columns'},
+    div({className:'sm-stack'},
+     sect({className:'sm-section'},h3(null,'Informações da sessão'),field('Título',item.title,v=>patchSession(item.id,0,v)),field('Resumo / sinopse',item.summary,v=>patchSession(item.id,1,v),'textarea'),div({className:'sm-fields-2'},field('Data',m.date||'',v=>updateMeta(item.id,{date:v}),'date'),field('Horário',m.time||'',v=>updateMeta(item.id,{time:v}),'time')),lab({className:'sm-field'},span(null,'Situação'),sel({value:m.status||'planned',onChange:e=>updateMeta(item.id,{status:e.target.value})},Object.entries(statuses).map(([k,v])=>opt({key:k,value:k},v)))),field('Objetivo da sessão',m.objective||'',v=>updateMeta(item.id,{objective:v}),'textarea')),
+     h(ScenesManager,{key:item.id,scenes,onChange:next=>updateMeta(item.id,{scenes:next})})),
+    div({className:'sm-stack'},
+     sect({className:'sm-section'},h3(null,'Checklist de preparação'),div({className:'sm-prog'},span({style:{width:progress(item.id)+'%'}})),para({className:'hint'},tasks.filter(t=>t.done).length+' de '+tasks.length+' tarefas concluídas'),tasks.map(t=>div({className:'sm-check',key:t.id},inp({type:'checkbox',checked:!!t.done,onChange:e=>updateMeta(item.id,{tasks:tasks.map(x=>x.id===t.id?{...x,done:e.target.checked}:x)})}),span({style:{textDecoration:t.done?'line-through':'none',color:t.done?'var(--muted)':'var(--ink)'}},t.text),btn({className:'btn small',title:'Remover tarefa',onClick:()=>updateMeta(item.id,{tasks:tasks.filter(x=>x.id!==t.id)})},'×'))),div({className:'sm-addline'},inp({value:newTask,placeholder:'Adicionar tarefa...',onChange:e=>setNewTask(e.target.value),onKeyDown:e=>{if(e.key==='Enter')addTask();}}),btn({className:'btn primary',onClick:addTask},'+ Adicionar'))),
+     sect({className:'sm-section'},h3(null,'Anotações do mestre'),para({className:'hint'},'Informações privadas, pistas, improvisos e observações.'),field('Notas privadas',m.notes||'',v=>updateMeta(item.id,{notes:v}),'textarea'),h('hr',{className:'sm-divider'}),h3(null,'Registro pós-sessão'),field('O que aconteceu na mesa',m.recap||'',v=>updateMeta(item.id,{recap:v}),'textarea')),
+     sect({className:'sm-section'},h3(null,'Gerenciamento'),para({className:'hint'},'A exclusão remove esta sessão e as informações associadas.'),h(Confirm,{label:'Excluir sessão',onYes:()=>deleteSession(item.id)})))))
+ }
+ return div({className:'sm-board'},
+  div({className:'sm-head'},div(null,span({className:'sm-kicker'},'CENTRAL DO MESTRE'),h2(null,'Sessões da campanha'),para(null,'Planeje, acompanhe e registre cada capítulo da aventura.')),btn({className:'btn primary',onClick:addSession},'+ Nova sessão')),
+  div({className:'sm-stats'},stat(normalized.length,'Sessões no total'),stat(counts.planned,'Planejadas'),stat(counts.active,'Em andamento'),stat(counts.done,'Concluídas')),
+  div({className:'sm-toolbar'},div(null,span({className:'lbl'},'Filtrar'),sel({value:filter,'aria-label':'Filtrar sessões',onChange:e=>{setFilter(e.target.value);setPage(1);}},opt({value:'all'},'Todas as sessões'),Object.entries(statuses).map(([k,v])=>opt({key:k,value:k},v)))),inp({className:'sm-search',type:'search',value:search,placeholder:'Buscar por título ou resumo...',onChange:e=>{setSearch(e.target.value);setPage(1);},'aria-label':'Buscar sessões'})),
+  filtered.length?div({className:'sm-cards'},visibleSessions.map(item=>{const m=meta(item.id),status=m.status||'planned',tasks=m.tasks||[];return sect({key:item.id,className:'sm-card'},div({className:'sm-card-top'},span({className:'sm-number'},'SESSÃO '+String(item.i+1).padStart(2,'0')),statusBadge(status)),h3({title:item.title},item.title),para({className:'sm-desc',title:item.summary},item.summary||'Sem resumo definido. Abra a sessão para adicionar detalhes.'),div({className:'sm-metadata'},span(null,m.date?m.date.split('-').reverse().join('/'):'Data a definir'),m.time?span(null,'• '+m.time):null,span(null,'• '+tasks.filter(t=>t.done).length+'/'+tasks.length+' tarefas')),div({className:'sm-prog'},span({style:{width:progress(item.id)+'%'}})),div({className:'sm-card-bottom'},btn({className:'btn primary',onClick:()=>{setSelected(item.id);setNewScene('');setNewTask('');}},'Abrir sessão'),btn({className:'btn',title:'Duplicar sessão',onClick:()=>duplicateSession(item)},'⧉')))})):div({className:'sm-empty'},h3(null,'Nenhuma sessão encontrada'),para(null,normalized.length?'Experimente mudar o filtro ou a busca.':'Crie a primeira sessão da campanha para começar o planejamento.'),normalized.length?null:btn({className:'btn primary',onClick:addSession},'+ Criar sessão')),
+  filtered.length?div({className:'sm-pagination',role:'navigation','aria-label':'Paginação das sessões'},
+   span({className:'hint','aria-live':'polite'},'Mostrando '+((currentPage-1)*pageSize+1)+'–'+Math.min(currentPage*pageSize,filtered.length)+' de '+filtered.length+' sessões'),
+   div({className:'inline'},
+    btn({type:'button',className:'btn small',disabled:currentPage===1,'aria-label':'Página anterior',onClick:()=>setPage(currentPage-1)},'‹'),
+    pageButtons(totalPages,currentPage,setPage),
+    btn({type:'button',className:'btn small',disabled:currentPage===totalPages,'aria-label':'Próxima página',onClick:()=>setPage(currentPage+1)},'›'))):null);
+}
+
+
+function PlayerRosterManager({players,setPlayers,campaignId}){
+ const [meta,setMeta]=useLS('forja-player-meta-'+campaignId,{});
+ const [search,setSearch]=useState('');
+ const [openId,setOpenId]=useState(null);
+ const fileInput=useRef(null);
+ const normalized=players.map((entry,i)=>({id:entry[2]||'player-'+i,player:entry[0]||'',detail:entry[1]||''}));
+ const filtered=normalized.filter(item=>(item.player+' '+item.detail).toLowerCase().includes(search.trim().toLowerCase()));
+ const selected=normalized.find(item=>item.id===openId);
+ const splitDetail=(detail)=>{const [character,...rest]=String(detail||'').split(',');return {character:character.trim(),classInfo:rest.join(',').trim()};};
+ const initials=name=>String(name||'?').split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase()||'?';
+ const patch=(id,field,value)=>setPlayers(old=>old.map((entry,i)=>{
+   const key=entry[2]||'player-'+i;
+   if(key!==id)return entry;
+   const copy=[entry[0]||'',entry[1]||'',key];copy[field]=value;return copy;
+ }));
+ const update=(id,changes)=>setMeta(old=>({...old,[id]:{...(old[id]||{}),...changes}}));
+ const newPlayer=()=>{const id='player-'+uid();setPlayers(old=>[...old,['Novo jogador','Novo personagem, Classe 1',id]]);setOpenId(id);};
+ const removePlayer=id=>{setPlayers(old=>old.filter((x,i)=>(x[2]||'player-'+i)!==id));setMeta(old=>{const copy={...old};delete copy[id];return copy;});setOpenId(null);};
+ const uploadPhoto=(id,file)=>{
+   if(!file)return;
+   if(!file.type.startsWith('image/')||file.size>1400000){alert('Selecione uma imagem de até 1,4 MB.');return;}
+   const reader=new FileReader();reader.onload=()=>update(id,{photo:String(reader.result)});reader.readAsDataURL(file);
+ };
+ const portrait=(item,large=false)=>{
+   const info=meta[item.id]||{};const character=splitDetail(item.detail).character;
+   return div({className:'cast-portrait'+(large?' large':'')},info.photo?h('img',{src:info.photo,alt:'Retrato de '+character}):span(null,initials(character||item.player)));
+ };
+ const statField=(id,key,label)=>lab({className:'field'},span({className:'lbl'},label),inp({type:'number',value:(meta[id]||{}).stats?.[key]??'',placeholder:'—',onChange:e=>update(id,{stats:{...((meta[id]||{}).stats||{}),[key]:e.target.value}})}));
+ const detailField=(id,key,label,multiline=false)=>lab({className:'field'},span({className:'lbl'},label),multiline?area({rows:4,value:(meta[id]||{})[key]||'',onChange:e=>update(id,{[key]:e.target.value})}):inp({value:(meta[id]||{})[key]||'',onChange:e=>update(id,{[key]:e.target.value})}));
+ const modal=selected?(()=>{
+   const id=selected.id,info=meta[id]||{},ch=splitDetail(selected.detail);
+   return div({className:'cast-overlay',role:'presentation',onMouseDown:e=>{if(e.target===e.currentTarget)setOpenId(null);}},
+     div({className:'cast-dialog',role:'dialog','aria-modal':true,'aria-label':'Ficha de '+(ch.character||selected.player)},
+       div({className:'cast-dialog-head'},
+         div({className:'cast-dialog-identity'},portrait(selected,true),div(null,span({className:'sys'},'FICHA DO PERSONAGEM'),h2(null,ch.character||'Novo personagem'),span({className:'hint'},selected.player+' · '+(ch.classInfo||'Classe não definida')))),
+         btn({className:'btn small',onClick:()=>setOpenId(null),'aria-label':'Fechar ficha'},'✕')),
+       div({className:'cast-dialog-content'},
+         div({className:'cast-dialog-col'},
+           sect({className:'cast-edit-section'},h3(null,'Identidade'),
+             lab({className:'field'},span({className:'lbl'},'Jogador'),inp({value:selected.player,onChange:e=>patch(id,0,e.target.value)})),
+             lab({className:'field'},span({className:'lbl'},'Personagem e classe'),inp({value:selected.detail,onChange:e=>patch(id,1,e.target.value)})),
+             div({className:'cast-inline'},detailField(id,'origin','Raça / origem'),detailField(id,'level','Nível / NEX')),
+             lab({className:'field'},span({className:'lbl'},'Retrato do personagem'),inp({type:'file',accept:'image/*',ref:fileInput,onChange:e=>uploadPhoto(id,e.target.files&&e.target.files[0])})),
+             info.photo?btn({className:'btn small',onClick:()=>update(id,{photo:''})},'Remover retrato'):null),
+           sect({className:'cast-edit-section'},h3(null,'Atributos'),
+             div({className:'cast-stats'},[['for','Força'],['des','Destreza / Agilidade'],['con','Constituição / Vigor'],['int','Intelecto'],['sab','Sabedoria'],['car','Carisma / Presença']].map(([key,label])=>statField(id,key,label))))
+         ),
+         div({className:'cast-dialog-col'},
+           sect({className:'cast-edit-section'},h3(null,'Combate e recursos'),div({className:'cast-stats'},[['hp','Vida atual'],['hpMax','Vida máxima'],['resource','PE / PM atual'],['resourceMax','PE / PM máximo'],['sanity','Sanidade'],['defense','Defesa']].map(([key,label])=>statField(id,key,label)))),
+           sect({className:'cast-edit-section'},h3(null,'Habilidades e equipamentos'),detailField(id,'abilities','Habilidades / poderes',true),detailField(id,'inventory','Inventário / equipamentos',true)),
+           sect({className:'cast-edit-section'},h3(null,'História e notas'),detailField(id,'description','História / aparência',true),detailField(id,'notes','Anotações do mestre',true))
+         )
+       ),
+       div({className:'cast-dialog-footer'},span({className:'hint'},'Alterações salvas neste navegador.'),div({className:'inline'},h(Confirm,{label:'Remover personagem',onYes:()=>removePlayer(id)}),btn({className:'btn primary',onClick:()=>setOpenId(null)},'Concluir')))
+     )
+   );
+ })():null;
+ return div({className:'roster-wrap'},
+   div({className:'roster-head'},div({className:'stack'},span({className:'sys'},'ELENCO DA CAMPANHA'),h2(null,'Jogadores e personagens'),span({className:'hint'},players.length+' personagem'+(players.length===1?'':'s')+' na campanha · Clique em um cartão para abrir sua ficha.')),
+     div({className:'roster-tools'},inp({value:search,onChange:e=>setSearch(e.target.value),placeholder:'Buscar personagem ou jogador...','aria-label':'Buscar personagem ou jogador'}),btn({className:'btn primary',onClick:newPlayer},'+ Jogador'))),
+   filtered.length?div({className:'cast-card-grid'},filtered.map(item=>{
+     const data=splitDetail(item.detail);
+     return div({key:item.id,className:'cast-mini-card'},portrait(item),div({className:'cast-mini-info'},h3({title:data.character},data.character||'Sem nome'),span({className:'hint',title:item.player},item.player||'Jogador não definido'),span({className:'cast-class',title:data.classInfo},data.classInfo||'Classe não definida')),
+       btn({className:'btn small cast-open-btn',onClick:()=>setOpenId(item.id),'aria-label':'Abrir ficha de '+data.character},'Ver ficha  →'));
+   })):div({className:'roster-empty'},search?'Nenhum personagem encontrado.':'Nenhum personagem cadastrado. Adicione o primeiro jogador.'),
+   modal
+ );
+}
+
 function MasterDashboard({campaign}){
  const c=campaign;
  const [tab,setTab]=useState('overview');
@@ -1059,8 +1417,8 @@ function MasterDashboard({campaign}){
  const editList=(title,items,setItems,labels)=>sect({className:'panel'},h2(null,title),items.map((item,i)=>div({key:i,className:'npc'},labels.map((label,j)=>lab({key:j,className:'field'},span({className:'lbl'},label),inp({value:item[j]||'',onChange:e=>setItems(old=>old.map((x,k)=>k===i?labels.map((_,z)=>z===j?e.target.value:x[z]||''):x))}))),h(Confirm,{label:'Remover',onYes:()=>setItems(old=>old.filter((_,k)=>k!==i))}))),btn({className:'btn primary',onClick:()=>setItems(old=>[...old,labels.map(()=> '')])},'+ Adicionar'));
  let content;
  if(tab==='overview')content=[div({key:'banner',className:'gm-banner'},span({className:'sys'},c.system),h2(null,settings.title),para({style:{margin:0}},settings.blurb)),div({key:'stats',className:'gm-stats'},[[players.length,'Jogadores'],[sessions.length,'Sessões'],[npcs.length,'NPCs']].map(([n,l])=>div({key:l,className:'panel'},b2(n),span(null,l)))),sect({key:'next',className:'panel'},h2(null,'Próxima sessão'),b2(settings.next),div({className:'hint'},'Preparação da sessão'),div({className:'gm-progress'},div({style:{width:(tasks.length?ok/tasks.length*100:0)+'%'}})),span({className:'hint'},ok+' de '+tasks.length+' tarefas concluídas')),div({key:'people'},people())];
- else if(tab==='sessions')content=editList('Sessões',sessions,setSessions,['Título','Resumo']);
- else if(tab==='players')content=editList('Jogadores e personagens',players,setPlayers,['Jogador','Personagem / classe']);
+ else if(tab==='sessions')content=h(SessionsManager,{sessions,setSessions,campaignId:c.id});
+ else if(tab==='players')content=h(PlayerRosterManager,{players,setPlayers,campaignId:c.id});
  else if(tab==='npcs')content=editList('NPCs',npcs,setNpcs,['Nome','Função','Descrição']);
  else if(tab==='places')content=editList('Locais',places,setPlaces,['Nome','Descrição']);
  else if(tab==='combat')content=div({className:'stack'},h(Initiative,{campaignId:c.id}),sect({className:'panel'},h2(null,'Dados'),h(DiceRoller)));
